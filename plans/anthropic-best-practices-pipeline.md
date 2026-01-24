@@ -22,20 +22,20 @@ flowchart TD
 ## スクリプト
 
 1. 取得  
-   `scripts/anthropic_fetch.rb --all`
+   `skills/doc-fetcher/scripts/anthropic_fetch.rb --all`
 
 2. 正規化  
-   `scripts/anthropic_normalize.rb --all`
+   `skills/md-normalizer/scripts/anthropic_normalize.rb --all`
 
 3. セクション分割  
-   `scripts/anthropic_split_sections.rb --all`
+   `skills/md-section-splitter/scripts/anthropic_split_sections.rb --all`
 
 4. 英語抽出（生成物は data/ に保存）  
-   `scripts/anthropic_generate_claude_md.rb`
+   `skills/md-section-extractor/scripts/anthropic_generate_claude_md.rb`
 
 5. 翻訳（GPT-5）  
-   `OPENAI_API_KEY=... scripts/openai_translate_markdown.rb`  
-   1Password 経由なら: `scripts/openai_translate_markdown.rb --use-1password`
+   `OPENAI_API_KEY=... skills/md-translator/scripts/openai_translate_markdown.rb`  
+   1Password 経由なら: `skills/md-translator/scripts/openai_translate_markdown.rb --use-1password`
 
 ## 出力場所
 

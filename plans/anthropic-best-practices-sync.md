@@ -19,17 +19,17 @@
 - ランタイム: Ruby
 - 作成: docs/best-practices/ ディレクトリ
 - 方針: AIが骨子を作らない。まずは Anthropic 公式 docs を決定論的に取得するための取得ツールを作る。
-- 取得ツール作成: scripts/anthropic_fetch.rb
+- 取得ツール作成: skills/doc-fetcher/scripts/anthropic_fetch.rb（正本）
 - データ保存先: data/anthropic/ (sources.yaml, state.json, snapshots/)
 - メモ: add-skill CLI の利用を検討。後回し。
-- 正規化: pandoc を使用。scripts/anthropic_normalize.rb 追加。
+- 正規化: pandoc を使用。skills/md-normalizer/scripts/anthropic_normalize.rb 追加（正本）。
 - 正規化MarkdownをH2単位で分割し、index.md + 連番セクション.md を生成する方針。
-- 分割ツール作成: scripts/anthropic_split_sections.rb
+- 分割ツール作成: skills/md-section-splitter/scripts/anthropic_split_sections.rb（正本）
 - 公式Docsは .md エンドポイントを優先して取得する（例: /best-practices.md）。HTMLはフォールバック。
-- CLAUDE.md 用抽出スクリプト作成: scripts/anthropic_generate_claude_md.rb
+- CLAUDE.md 用抽出スクリプト作成: skills/md-section-extractor/scripts/anthropic_generate_claude_md.rb（正本）
 - 出力する best-practices の .md は日本語で生成する。
 - 翻訳は GPT-5 を使用。英語生成後に翻訳を適用し、docs/ に日本語を出力。
-- 翻訳スクリプト追加: scripts/openai_translate_markdown.rb
+- 翻訳スクリプト追加: skills/md-translator/scripts/openai_translate_markdown.rb（正本）
 - 説明ドキュメント追加: plans/anthropic-best-practices-pipeline.md
 - 翻訳スクリプトに --use-1password を追加。tmux 内で op read して OPENAI_API_KEY を取得。
 - GPT-5 では temperature が使えないため、翻訳スクリプトから温度指定を省略（必要時のみ --temperature で指定）。
