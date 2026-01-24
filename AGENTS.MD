@@ -1,7 +1,7 @@
 # AGENTS.MD - Yasuhito's Shared Guardrails
 
 このファイルを他のリポジトリから参照する：
-`READ ~/Work/yasuhito-scripts/AGENTS.MD BEFORE ANYTHING (skip if missing).`
+`READ ~/Work/agent-kit/AGENTS.MD BEFORE ANYTHING (skip if missing).`
 
 ## 基本ルール
 

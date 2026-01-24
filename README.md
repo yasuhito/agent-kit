@@ -1,4 +1,4 @@
-# Yasuhito Scripts
+# Agent Kit
 
 AI エージェント用のスクリプト・スキル・ガードレール集。
 
@@ -15,6 +15,5 @@ AI エージェント用のスクリプト・スキル・ガードレール集�
 他のリポジトリの `AGENTS.MD` 先頭に追加：
 
 ```markdown
-READ ~/Work/yasuhito-scripts/AGENTS.MD BEFORE ANYTHING (skip if missing).
+READ ~/Work/agent-kit/AGENTS.MD BEFORE ANYTHING (skip if missing).
 ```
-
