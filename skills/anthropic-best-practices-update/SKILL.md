@@ -28,7 +28,7 @@ skills/anthropic-best-practices-update/scripts/run_pipeline.sh --skip-translate
 1. Fetch sources (doc-fetcher).
 2. Normalize snapshots (md-normalizer).
 3. Split into sections (md-section-splitter).
-4. Extract CLAUDE.md section (md-section-extractor).
+4. Convert normalized markdown (md-converter).
 5. Translate to Japanese (md-translator).
 
 ## Inputs

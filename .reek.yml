@@ -1,0 +1,38 @@
+---
+# Reek configuration for standalone Ruby scripts
+
+detectors:
+  # Standalone scripts don't have instance state - this is expected
+  UtilityFunction:
+    enabled: false
+
+  # Control parameters are common in CLI scripts
+  ControlParameter:
+    enabled: false
+
+  # Feature envy is expected when manipulating data structures
+  FeatureEnvy:
+    enabled: false
+
+  # These thresholds are reasonable for scripts
+  TooManyStatements:
+    max_statements: 15
+
+  LongParameterList:
+    max_params: 5
+
+  # Nil checks are often necessary for validation
+  NilCheck:
+    enabled: false
+
+  # Duplicate method calls are often intentional for readability
+  DuplicateMethodCall:
+    max_calls: 3
+
+  # Nested iterators are sometimes necessary
+  NestedIterators:
+    max_allowed_nesting: 2
+
+  # Short variable names are acceptable for common patterns
+  UncommunicativeVariableName:
+    enabled: false

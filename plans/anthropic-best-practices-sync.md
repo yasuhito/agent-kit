@@ -26,10 +26,13 @@
 - 正規化MarkdownをH2単位で分割し、index.md + 連番セクション.md を生成する方針。
 - 分割ツール作成: skills/md-section-splitter/scripts/anthropic_split_sections.rb（正本）
 - 公式Docsは .md エンドポイントを優先して取得する（例: /best-practices.md）。HTMLはフォールバック。
-- CLAUDE.md 用抽出スクリプト作成: skills/md-section-extractor/scripts/anthropic_generate_claude_md.rb（正本）
+- 正規化 Markdown の変換スクリプト作成: skills/md-converter/scripts/anthropic_convert.rb（正本）
 - 出力する best-practices の .md は日本語で生成する。
 - 翻訳は GPT-5 を使用。英語生成後に翻訳を適用し、docs/ に日本語を出力。
 - 翻訳スクリプト追加: skills/md-translator/scripts/openai_translate_markdown.rb（正本）
 - 説明ドキュメント追加: plans/anthropic-best-practices-pipeline.md
 - 翻訳スクリプトに --use-1password を追加。tmux 内で op read して OPENAI_API_KEY を取得。
 - GPT-5 では temperature が使えないため、翻訳スクリプトから温度指定を省略（必要時のみ --temperature で指定）。
+- 一括更新スクリプト: skills/anthropic-best-practices-update/scripts/run_pipeline.sh
+- SSL 証明書エラー回避のため --insecure を用意（fetch/translate で使用）
+- OpenSSL CRL エラー対策: openssl gem を 3.3.2 以上に更新して利用（Gemfile に追加、bundle install）

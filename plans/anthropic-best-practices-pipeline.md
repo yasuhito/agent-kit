@@ -14,12 +14,12 @@
 flowchart TD
   A[fetch: 公式 .md を取得] --> B[normalize: Markdown を正規化]
   B --> C[split: H2 セクション分割]
-  C --> D[generate: 英語ベースの抽出 md]
+  C --> D[convert: MDX→標準 Markdown 変換]
   D --> E[translate: GPT-5 で日本語化]
   E --> F[docs/ に出力]
 ```
 
-## スクリプト
+## スクリプト（個別実行）
 
 1. 取得  
    `skills/doc-fetcher/scripts/anthropic_fetch.rb --all`
@@ -30,20 +30,38 @@ flowchart TD
 3. セクション分割  
    `skills/md-section-splitter/scripts/anthropic_split_sections.rb --all`
 
-4. 英語抽出（生成物は data/ に保存）  
-   `skills/md-section-extractor/scripts/anthropic_generate_claude_md.rb`
+4. 英語変換（MDX タグ等を標準 Markdown へ）  
+   `skills/md-converter/scripts/anthropic_convert.rb --all`
 
 5. 翻訳（GPT-5）  
    `OPENAI_API_KEY=... skills/md-translator/scripts/openai_translate_markdown.rb`  
    1Password 経由なら: `skills/md-translator/scripts/openai_translate_markdown.rb --use-1password`
+
+## 一括実行（推奨）
+
+```bash
+skills/anthropic-best-practices-update/scripts/run_pipeline.sh
+```
+
+特定ソースのみ:
+
+```bash
+skills/anthropic-best-practices-update/scripts/run_pipeline.sh --id claude-prompt-best-practices
+```
+
+翻訳を省略:
+
+```bash
+skills/anthropic-best-practices-update/scripts/run_pipeline.sh --skip-translate
+```
 
 ## 出力場所
 
 - 取得スナップショット: `data/anthropic/snapshots/`
 - 正規化: `data/anthropic/normalized/`
 - 分割: `data/anthropic/sections/`
-- 生成（英語）: `data/anthropic/generated/claude-md.en.md`
-- 生成（日本語）: `docs/best-practices/claude-md.md`
+- 生成（英語）: `data/anthropic/generated/<source-id>.en.md`
+- 生成（日本語）: `docs/best-practices/<source-id>.md`
 
 ## 翻訳ルール（GPT-5）
 
@@ -57,3 +75,11 @@ flowchart TD
 - `pandoc`（HTMLフォールバックの正規化用）
 - `OPENAI_API_KEY`（翻訳用）
   - 1Password から取得する場合: `OPENAI_API_KEY=$(op read "op://Personal/OpenAI API Key/credential")`
+- `openssl` gem（CRL エラー回避のため）
+  - `bundle install` を実行して 3.3.2 以上を使用する
+
+## トラブルシューティング
+
+- SSL 証明書エラーが出る場合: `--insecure` を使用  
+  例: `skills/anthropic-best-practices-update/scripts/run_pipeline.sh --insecure`
+- tmux については `plans/tmux-memo.md` を参照

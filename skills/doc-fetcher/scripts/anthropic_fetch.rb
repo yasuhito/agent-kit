@@ -5,6 +5,7 @@ require 'digest'
 require 'fileutils'
 require 'json'
 require 'net/http'
+require 'openssl'
 require 'optparse'
 require 'time'
 require 'uri'
@@ -14,8 +15,10 @@ def find_repo_root(start_dir)
   current = File.expand_path(start_dir)
   8.times do
     return current if File.directory?(File.join(current, 'data', 'anthropic'))
+
     parent = File.dirname(current)
     break if parent == current
+
     current = parent
   end
   File.expand_path('..', __dir__)
@@ -33,7 +36,8 @@ OPTIONS = {
   ids: [],
   force: false,
   dry_run: false,
-  list: false
+  list: false,
+  insecure: false
 }.freeze
 
 options = OPTIONS.dup
@@ -45,6 +49,7 @@ OptionParser.new do |opts|
   opts.on('--force', 'Skip conditional headers and always download') { options[:force] = true }
   opts.on('--dry-run', 'Do not write files') { options[:dry_run] = true }
   opts.on('--list', 'List sources') { options[:list] = true }
+  opts.on('--insecure', 'Skip SSL certificate verification') { options[:insecure] = true }
 end.parse!
 
 def load_sources
@@ -53,7 +58,7 @@ def load_sources
     exit 1
   end
 
-  data = YAML.safe_load(File.read(SOURCES_FILE))
+  data = YAML.safe_load_file(SOURCES_FILE)
   list = data.is_a?(Hash) ? data['sources'] : data
   unless list.is_a?(Array)
     warn 'sources.yaml must contain a top-level array or a sources: array'
@@ -73,7 +78,8 @@ end
 
 def normalize_entry(entry)
   ordered = {}
-  %w[url etag last_modified last_status last_checked_at last_changed_at last_sha256 last_snapshot_path last_bytes last_content_type].each do |key|
+  %w[url etag last_modified last_status last_checked_at last_changed_at last_sha256 last_snapshot_path last_bytes
+     last_content_type].each do |key|
     ordered[key] = entry[key] if entry.key?(key)
   end
   entry.each do |key, value|
@@ -97,7 +103,7 @@ def save_state(state, dry_run)
 
   FileUtils.mkdir_p(File.dirname(STATE_FILE))
   tmp = "#{STATE_FILE}.tmp"
-  File.write(tmp, JSON.pretty_generate(normalize_state(state)) + "\n")
+  File.write(tmp, "#{JSON.pretty_generate(normalize_state(state))}\n")
   FileUtils.mv(tmp, STATE_FILE)
 end
 
@@ -118,6 +124,7 @@ end
 
 def snapshot_extension(content_type)
   return 'md' if content_type&.include?('text/markdown')
+
   'html'
 end
 
@@ -144,7 +151,7 @@ def write_snapshot(id, url, response, body, dry_run)
   unless dry_run
     FileUtils.mkdir_p(dir)
     File.write(snapshot_path, body) unless File.exist?(snapshot_path)
-    File.write(meta_path, JSON.pretty_generate(meta) + "\n") unless File.exist?(meta_path)
+    File.write(meta_path, "#{JSON.pretty_generate(meta)}\n") unless File.exist?(meta_path)
   end
 
   {
@@ -160,6 +167,7 @@ sources = load_sources
 if options[:list]
   sources.each do |source|
     next if source['enabled'] == false
+
     puts "#{source['id']}\t#{source['url']}"
   end
   exit 0
@@ -171,7 +179,7 @@ if !options[:all] && options[:ids].empty?
 end
 
 selected = if options[:all]
-             sources.select { |s| s['enabled'] != false }
+             sources.reject { |s| s['enabled'] == false }
            else
              sources.select { |s| options[:ids].include?(s['id']) }
            end
@@ -183,6 +191,42 @@ end
 
 state = load_state
 state['sources'] ||= {}
+
+def fetch_source(http, uri, state_entry, force)
+  request = build_request(uri, state_entry, force)
+  http.request(request)
+end
+
+def update_state_entry_success(state_entry, response, snapshot)
+  state_entry['etag'] = response['etag'] if response['etag']
+  state_entry['last_modified'] = response['last-modified'] if response['last-modified']
+  state_entry['last_sha256'] = snapshot[:sha256]
+  state_entry['last_snapshot_path'] = snapshot[:snapshot_path].sub("#{ROOT}/", '')
+  state_entry['last_bytes'] = snapshot[:bytes]
+  state_entry['last_content_type'] = response['content-type'] if response['content-type']
+end
+
+def process_response(id, url, response, state_entry, dry_run)
+  return :not_modified if response.code.to_i == 304
+
+  unless response.code.to_i.between?(200, 299)
+    warn "#{id}: HTTP #{response.code}"
+    return :error
+  end
+
+  body = response.body || ''
+  snapshot = write_snapshot(id, url, response, body, dry_run)
+
+  if state_entry['last_sha256'] == snapshot[:sha256]
+    puts "#{id}: unchanged content"
+  else
+    puts "#{id}: updated (#{snapshot[:sha256]})"
+    state_entry['last_changed_at'] = snapshot[:changed_at]
+  end
+
+  update_state_entry_success(state_entry, response, snapshot)
+  :success
+end
 
 selected.each do |source|
   id = source['id']
@@ -197,42 +241,21 @@ selected.each do |source|
 
   http = Net::HTTP.new(uri.host, uri.port)
   http.use_ssl = uri.scheme == 'https'
+  http.verify_mode = OpenSSL::SSL::VERIFY_NONE if options[:insecure]
   http.read_timeout = 20
   http.open_timeout = 10
 
-  request = build_request(uri, state_entry, options[:force])
-  response = http.request(request)
+  response = fetch_source(http, uri, state_entry, options[:force])
 
-  now = Time.now.utc.iso8601
   state_entry['url'] = url
   state_entry['last_status'] = response.code.to_i
-  state_entry['last_checked_at'] = now
+  state_entry['last_checked_at'] = Time.now.utc.iso8601
 
-  if response.code.to_i == 304
+  result = process_response(id, url, response, state_entry, options[:dry_run])
+  if result == :not_modified
     state['sources'][id] = state_entry
     puts "#{id}: not modified"
     next
-  end
-
-  if response.code.to_i >= 200 && response.code.to_i < 300
-    body = response.body || ''
-    snapshot = write_snapshot(id, url, response, body, options[:dry_run])
-
-    if state_entry['last_sha256'] == snapshot[:sha256]
-      puts "#{id}: unchanged content"
-    else
-      puts "#{id}: updated (#{snapshot[:sha256]})"
-      state_entry['last_changed_at'] = snapshot[:changed_at]
-    end
-
-    state_entry['etag'] = response['etag'] if response['etag']
-    state_entry['last_modified'] = response['last-modified'] if response['last-modified']
-    state_entry['last_sha256'] = snapshot[:sha256]
-    state_entry['last_snapshot_path'] = snapshot[:snapshot_path].sub(ROOT + '/', '')
-    state_entry['last_bytes'] = snapshot[:bytes]
-    state_entry['last_content_type'] = response['content-type'] if response['content-type']
-  else
-    warn "#{id}: HTTP #{response.code}"
   end
 
   state['sources'][id] = state_entry

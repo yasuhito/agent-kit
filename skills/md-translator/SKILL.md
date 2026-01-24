@@ -35,6 +35,9 @@ skills/md-translator/scripts/openai_translate_markdown.rb --use-1password
 - `--temperature N` (only if the model supports it)
 - `--meta PATH` (write metadata JSON)
 - `--dry-run` (no file writes)
+- `--insecure` (skip SSL certificate verification)
+- `--open-timeout SECONDS` (HTTP open timeout)
+- `--read-timeout SECONDS` (HTTP read timeout)
 
 ## Constraints
 

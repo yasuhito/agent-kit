@@ -11,8 +11,10 @@ def find_repo_root(start_dir)
   current = File.expand_path(start_dir)
   8.times do
     return current if File.directory?(File.join(current, 'data', 'anthropic'))
+
     parent = File.dirname(current)
     break if parent == current
+
     current = parent
   end
   File.expand_path('..', __dir__)
@@ -49,7 +51,7 @@ def load_sources
     exit 1
   end
 
-  data = YAML.safe_load(File.read(SOURCES_FILE))
+  data = YAML.safe_load_file(SOURCES_FILE)
   list = data.is_a?(Hash) ? data['sources'] : data
   unless list.is_a?(Array)
     warn 'sources.yaml must contain a top-level array or a sources: array'
@@ -69,7 +71,8 @@ end
 
 def normalize_entry(entry)
   ordered = {}
-  %w[url etag last_modified last_status last_checked_at last_changed_at last_sha256 last_snapshot_path last_bytes last_normalized_sha256 last_normalized_path last_normalized_at last_sections_path last_sections_at].each do |key|
+  %w[url etag last_modified last_status last_checked_at last_changed_at last_sha256 last_snapshot_path last_bytes
+     last_normalized_sha256 last_normalized_path last_normalized_at last_sections_path last_sections_at].each do |key|
     ordered[key] = entry[key] if entry.key?(key)
   end
   entry.each do |key, value|
@@ -93,7 +96,7 @@ def save_state(state, dry_run)
 
   FileUtils.mkdir_p(File.dirname(STATE_FILE))
   tmp = "#{STATE_FILE}.tmp"
-  File.write(tmp, JSON.pretty_generate(normalize_state(state)) + "\n")
+  File.write(tmp, "#{JSON.pretty_generate(normalize_state(state))}\n")
   FileUtils.mv(tmp, STATE_FILE)
 end
 
@@ -106,11 +109,10 @@ def slugify(text)
   slug
 end
 
-fence = nil
-
 def toggle_fence(line, current)
   if current
     return nil if line.start_with?(current)
+
     return current
   end
 
@@ -153,6 +155,7 @@ state['sources'] ||= {}
 if options[:list]
   sources.each do |source|
     next if source['enabled'] == false
+
     id = source['id']
     entry = state['sources'][id] || {}
     puts "#{id}\t#{entry['last_normalized_path'] || '(no normalized)'}"
@@ -166,7 +169,7 @@ if !options[:all] && options[:ids].empty?
 end
 
 selected = if options[:all]
-             sources.select { |s| s['enabled'] != false }
+             sources.reject { |s| s['enabled'] == false }
            else
              sources.select { |s| options[:ids].include?(s['id']) }
            end
@@ -176,79 +179,100 @@ if selected.empty?
   exit 1
 end
 
-selected.each do |source|
+def validate_source(source)
   id = source['id']
   url = source['url']
-  if id.to_s.strip.empty? || url.to_s.strip.empty?
-    warn 'Each source must include id and url'
-    next
-  end
+  return nil if id.to_s.strip.empty? || url.to_s.strip.empty?
 
-  state_entry = state['sources'][id] || { 'url' => url }
+  { id: id, url: url }
+end
+
+def resolve_normalized_path(state_entry)
   normalized_rel = state_entry['last_normalized_path']
-  if normalized_rel.nil? || normalized_rel.to_s.strip.empty?
-    warn "#{id}: normalized markdown missing"
-    next
-  end
+  return nil if normalized_rel.nil? || normalized_rel.to_s.strip.empty?
 
   normalized_path = File.join(ROOT, normalized_rel)
-  unless File.exist?(normalized_path)
-    warn "#{id}: normalized file not found"
-    next
-  end
+  return nil unless File.exist?(normalized_path)
 
-  snapshot_sha = File.basename(normalized_path, '.md')
+  { rel: normalized_rel, path: normalized_path }
+end
+
+def write_section_files(output_dir, preamble, sections, width)
+  FileUtils.rm_rf(output_dir)
+  FileUtils.mkdir_p(output_dir)
+
+  File.write(File.join(output_dir, 'index.md'), "#{preamble.join("\n")}\n")
+
+  sections.each_with_index do |section, idx|
+    slug = slugify(section['heading'])
+    prefix = (idx + 1).to_s.rjust(width, '0')
+    path = File.join(output_dir, "#{prefix}-#{slug}.md")
+    File.write(path, "#{section['lines'].join("\n")}\n")
+  end
+end
+
+def build_sections_meta(context, sections, width)
+  {
+    'id' => context[:id],
+    'url' => context[:url],
+    'normalized_path' => context[:normalized_rel],
+    'snapshot_sha256' => context[:snapshot_sha],
+    'sections' => sections.map.with_index do |section, idx|
+      prefix = (idx + 1).to_s.rjust(width, '0')
+      { 'index' => idx + 1, 'heading' => section['heading'], 'file' => "#{prefix}-#{slugify(section['heading'])}.md" }
+    end,
+    'generated_at' => context[:timestamp]
+  }
+end
+
+def write_sections_output(output_dir, preamble, sections, width, context)
+  write_section_files(output_dir, preamble, sections, width)
+  meta = build_sections_meta(context, sections, width)
+  File.write(File.join(output_dir, 'index.json'), "#{JSON.pretty_generate(meta)}\n")
+end
+
+def update_state_entry(state_entry, url, output_dir, timestamp)
+  state_entry['url'] = url
+  state_entry['last_sections_path'] = output_dir.sub("#{ROOT}/", '')
+  state_entry['last_sections_at'] = timestamp
+end
+
+def split_and_write(normalized, id, url, dry_run)
+  snapshot_sha = File.basename(normalized[:path], '.md')
   output_dir = File.join(SECTIONS_DIR, id, snapshot_sha)
 
-  if File.exist?(output_dir) && !options[:force]
-    puts "#{id}: sections exist"
-    next
-  end
-
-  lines = File.read(normalized_path).split("\n", -1)
+  lines = File.read(normalized[:path]).split("\n", -1)
   preamble, sections = split_sections(lines)
-
   width = [sections.length, 1].max.to_s.length
   timestamp = Time.now.utc.iso8601
 
-  unless options[:dry_run]
-    FileUtils.rm_rf(output_dir) if File.exist?(output_dir)
-    FileUtils.mkdir_p(output_dir)
-
-    preamble_path = File.join(output_dir, 'index.md')
-    File.write(preamble_path, preamble.join("\n") + "\n")
-
-    sections.each_with_index do |section, idx|
-      slug = slugify(section['heading'])
-      prefix = (idx + 1).to_s.rjust(width, '0')
-      path = File.join(output_dir, "#{prefix}-#{slug}.md")
-      File.write(path, section['lines'].join("\n") + "\n")
-    end
-
-    meta = {
-      'id' => id,
-      'url' => url,
-      'normalized_path' => normalized_rel,
-      'snapshot_sha256' => snapshot_sha,
-      'sections' => sections.map.with_index do |section, idx|
-        {
-          'index' => idx + 1,
-          'heading' => section['heading'],
-          'file' => "#{(idx + 1).to_s.rjust(width, '0')}-#{slugify(section['heading'])}.md"
-        }
-      end,
-      'generated_at' => timestamp
-    }
-
-    File.write(File.join(output_dir, 'index.json'), JSON.pretty_generate(meta) + "\n")
+  unless dry_run
+    context = { id: id, url: url, normalized_rel: normalized[:rel], snapshot_sha: snapshot_sha, timestamp: timestamp }
+    write_sections_output(output_dir, preamble, sections, width, context)
   end
 
-  state_entry['url'] = url
-  state_entry['last_sections_path'] = output_dir.sub(ROOT + '/', '')
-  state_entry['last_sections_at'] = timestamp
-  state['sources'][id] = state_entry
+  { output_dir: output_dir, timestamp: timestamp }
+end
 
+def process_source(source, state, force, dry_run)
+  validated = validate_source(source)
+  return warn('Each source must include id and url') if validated.nil?
+
+  id, url = validated.values_at(:id, :url)
+  state_entry = state['sources'][id] || { 'url' => url }
+
+  normalized = resolve_normalized_path(state_entry)
+  return warn("#{id}: normalized markdown missing or not found") if normalized.nil?
+
+  output_dir = File.join(SECTIONS_DIR, id, File.basename(normalized[:path], '.md'))
+  return puts("#{id}: sections exist") if File.exist?(output_dir) && !force
+
+  result = split_and_write(normalized, id, url, dry_run)
+  update_state_entry(state_entry, url, result[:output_dir], result[:timestamp])
+  state['sources'][id] = state_entry
   puts "#{id}: sections split"
 end
+
+selected.each { |source| process_source(source, state, options[:force], options[:dry_run]) }
 
 save_state(state, options[:dry_run])

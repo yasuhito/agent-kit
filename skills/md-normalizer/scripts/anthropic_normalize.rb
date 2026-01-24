@@ -13,8 +13,10 @@ def find_repo_root(start_dir)
   current = File.expand_path(start_dir)
   8.times do
     return current if File.directory?(File.join(current, 'data', 'anthropic'))
+
     parent = File.dirname(current)
     break if parent == current
+
     current = parent
   end
   File.expand_path('..', __dir__)
@@ -65,7 +67,7 @@ def load_sources
     exit 1
   end
 
-  data = YAML.safe_load(File.read(SOURCES_FILE))
+  data = YAML.safe_load_file(SOURCES_FILE)
   list = data.is_a?(Hash) ? data['sources'] : data
   unless list.is_a?(Array)
     warn 'sources.yaml must contain a top-level array or a sources: array'
@@ -85,7 +87,8 @@ end
 
 def normalize_entry(entry)
   ordered = {}
-  %w[url etag last_modified last_status last_checked_at last_changed_at last_sha256 last_snapshot_path last_bytes last_content_type last_normalized_sha256 last_normalized_path last_normalized_at].each do |key|
+  %w[url etag last_modified last_status last_checked_at last_changed_at last_sha256 last_snapshot_path last_bytes
+     last_content_type last_normalized_sha256 last_normalized_path last_normalized_at].each do |key|
     ordered[key] = entry[key] if entry.key?(key)
   end
   entry.each do |key, value|
@@ -109,7 +112,7 @@ def save_state(state, dry_run)
 
   FileUtils.mkdir_p(File.dirname(STATE_FILE))
   tmp = "#{STATE_FILE}.tmp"
-  File.write(tmp, JSON.pretty_generate(normalize_state(state)) + "\n")
+  File.write(tmp, "#{JSON.pretty_generate(normalize_state(state))}\n")
   FileUtils.mv(tmp, STATE_FILE)
 end
 
@@ -133,27 +136,27 @@ def ensure_snapshot_path(state_entry)
   File.join(ROOT, path)
 end
 
-def write_normalized(id, url, snapshot_path, snapshot_sha, markdown, pandoc_ver, pandoc_args, dry_run)
+def write_normalized(context, markdown, dry_run)
   normalized_sha = Digest::SHA256.hexdigest(markdown)
-  dir = File.join(NORMALIZED_DIR, id)
-  md_path = File.join(dir, "#{snapshot_sha}.md")
-  meta_path = File.join(dir, "#{snapshot_sha}.json")
+  dir = File.join(NORMALIZED_DIR, context[:id])
+  md_path = File.join(dir, "#{context[:snapshot_sha]}.md")
+  meta_path = File.join(dir, "#{context[:snapshot_sha]}.json")
 
   meta = {
-    'id' => id,
-    'url' => url,
-    'snapshot_path' => snapshot_path.sub(ROOT + '/', ''),
-    'snapshot_sha256' => snapshot_sha,
+    'id' => context[:id],
+    'url' => context[:url],
+    'snapshot_path' => context[:snapshot_path].sub("#{ROOT}/", ''),
+    'snapshot_sha256' => context[:snapshot_sha],
     'normalized_sha256' => normalized_sha,
-    'pandoc_version' => pandoc_ver,
-    'pandoc_args' => pandoc_args,
+    'pandoc_version' => context[:pandoc_ver],
+    'pandoc_args' => context[:pandoc_args],
     'normalized_at' => Time.now.utc.iso8601
   }
 
   unless dry_run
     FileUtils.mkdir_p(dir)
     File.write(md_path, markdown)
-    File.write(meta_path, JSON.pretty_generate(meta) + "\n")
+    File.write(meta_path, "#{JSON.pretty_generate(meta)}\n")
   end
 
   {
@@ -170,6 +173,7 @@ state['sources'] ||= {}
 if options[:list]
   sources.each do |source|
     next if source['enabled'] == false
+
     id = source['id']
     entry = state['sources'][id] || {}
     puts "#{id}\t#{entry['last_snapshot_path'] || '(no snapshot)'}"
@@ -183,7 +187,7 @@ if !options[:all] && options[:ids].empty?
 end
 
 selected = if options[:all]
-             sources.select { |s| s['enabled'] != false }
+             sources.reject { |s| s['enabled'] == false }
            else
              sources.select { |s| options[:ids].include?(s['id']) }
            end
@@ -193,58 +197,71 @@ if selected.empty?
   exit 1
 end
 
-selected.each do |source|
+def validate_source(source)
   id = source['id']
   url = source['url']
-  if id.to_s.strip.empty? || url.to_s.strip.empty?
-    warn 'Each source must include id and url'
-    next
-  end
+  return nil if id.to_s.strip.empty? || url.to_s.strip.empty?
 
-  state_entry = state['sources'][id] || { 'url' => url }
+  { id: id, url: url }
+end
+
+def prepare_snapshot(state_entry)
   snapshot_path = ensure_snapshot_path(state_entry)
-  if snapshot_path.nil? || !File.exist?(snapshot_path)
-    warn "#{id}: snapshot missing"
-    next
-  end
+  return nil if snapshot_path.nil? || !File.exist?(snapshot_path)
 
   snapshot_sha = state_entry['last_sha256']
   if snapshot_sha.nil? || snapshot_sha.to_s.strip.empty?
     snapshot_sha = Digest::SHA256.hexdigest(File.read(snapshot_path))
   end
 
-  normalized_path = File.join(NORMALIZED_DIR, id, "#{snapshot_sha}.md")
-  if File.exist?(normalized_path) && !options[:force]
-    puts "#{id}: normalized exists"
-    next
-  end
+  { path: snapshot_path, sha: snapshot_sha }
+end
 
-  input = File.read(snapshot_path)
+def convert_to_markdown(snapshot_path, input)
   ext = File.extname(snapshot_path).downcase
-  pandoc_args = nil
-  pandoc_ver = nil
-
   if ext == '.md'
-    stdout = input
-    pandoc_args = ['passthrough']
+    { output: input, pandoc_args: ['passthrough'], pandoc_ver: nil }
   else
     pandoc_ver = pandoc_version
-    pandoc_args = PANDOC_ARGS_HTML
-    stdout, stderr, status = run_pandoc(pandoc_args, input)
-    unless status.success?
-      warn "#{id}: pandoc failed\n#{stderr}"
-      next
-    end
-  end
+    stdout, stderr, status = run_pandoc(PANDOC_ARGS_HTML, input)
+    return { error: stderr } unless status.success?
 
-  result = write_normalized(id, url, snapshot_path, snapshot_sha, stdout, pandoc_ver, pandoc_args, options[:dry_run])
+    { output: stdout, pandoc_args: PANDOC_ARGS_HTML, pandoc_ver: pandoc_ver }
+  end
+end
+
+def update_state_with_result(state_entry, url, result)
   state_entry['url'] = url
   state_entry['last_normalized_sha256'] = result[:normalized_sha]
-  state_entry['last_normalized_path'] = result[:normalized_path].sub(ROOT + '/', '')
+  state_entry['last_normalized_path'] = result[:normalized_path].sub("#{ROOT}/", '')
   state_entry['last_normalized_at'] = result[:normalized_at]
-  state['sources'][id] = state_entry
+end
 
+def process_source(source, state, force, dry_run)
+  validated = validate_source(source)
+  return warn('Each source must include id and url') if validated.nil?
+
+  id, url = validated.values_at(:id, :url)
+  state_entry = state['sources'][id] || { 'url' => url }
+
+  snapshot = prepare_snapshot(state_entry)
+  return warn("#{id}: snapshot missing") if snapshot.nil?
+
+  normalized_path = File.join(NORMALIZED_DIR, id, "#{snapshot[:sha]}.md")
+  return puts("#{id}: normalized exists") if File.exist?(normalized_path) && !force
+
+  conversion = convert_to_markdown(snapshot[:path], File.read(snapshot[:path]))
+  return warn("#{id}: pandoc failed\n#{conversion[:error]}") if conversion[:error]
+
+  context = { id: id, url: url, snapshot_path: snapshot[:path], snapshot_sha: snapshot[:sha],
+              pandoc_ver: conversion[:pandoc_ver], pandoc_args: conversion[:pandoc_args] }
+  result = write_normalized(context, conversion[:output], dry_run)
+
+  update_state_with_result(state_entry, url, result)
+  state['sources'][id] = state_entry
   puts "#{id}: normalized"
 end
+
+selected.each { |source| process_source(source, state, options[:force], options[:dry_run]) }
 
 save_state(state, options[:dry_run])

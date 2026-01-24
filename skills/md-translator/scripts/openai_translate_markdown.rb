@@ -6,14 +6,17 @@ require 'json'
 require 'net/http'
 require 'open3'
 require 'optparse'
+require 'openssl'
 require 'time'
 
 def find_repo_root(start_dir)
   current = File.expand_path(start_dir)
   8.times do
     return current if File.directory?(File.join(current, 'data', 'anthropic'))
+
     parent = File.dirname(current)
     break if parent == current
+
     current = parent
   end
   File.expand_path('..', __dir__)
@@ -32,7 +35,10 @@ options = {
   dry_run: false,
   use_1password: false,
   op_item: 'op://Personal/OpenAI API Key/credential',
-  temperature: nil
+  temperature: nil,
+  insecure: false,
+  open_timeout: 30,
+  read_timeout: 600
 }
 
 OptionParser.new do |opts|
@@ -45,9 +51,12 @@ OptionParser.new do |opts|
   opts.on('--dry-run', 'Do not write files') { options[:dry_run] = true }
   opts.on('--use-1password', 'Read OPENAI_API_KEY via 1Password CLI (op)') { options[:use_1password] = true }
   opts.on('--op-item ITEM', '1Password item path for OPENAI_API_KEY') { |item| options[:op_item] = item }
+  opts.on('--insecure', 'Skip SSL certificate verification') { options[:insecure] = true }
+  opts.on('--open-timeout SECONDS', Integer, 'HTTP open timeout (default: 30)') { |sec| options[:open_timeout] = sec }
+  opts.on('--read-timeout SECONDS', Integer, 'HTTP read timeout (default: 600)') { |sec| options[:read_timeout] = sec }
 end.parse!
 
-api_key = ENV['OPENAI_API_KEY']
+api_key = ENV.fetch('OPENAI_API_KEY', nil)
 if (api_key.nil? || api_key.strip.empty?) && options[:use_1password]
   unless ENV['TMUX']
     warn 'Refusing to call op outside tmux. Start a tmux session and retry.'
@@ -57,7 +66,7 @@ if (api_key.nil? || api_key.strip.empty?) && options[:use_1password]
   op_out, op_err, op_status = Open3.capture3('op', 'read', options[:op_item])
   unless op_status.success?
     warn 'op read failed'
-    warn op_err.to_s
+    warn op_err
     exit 1
   end
   api_key = op_out.strip
@@ -73,40 +82,39 @@ unless File.exist?(options[:input])
   exit 1
 end
 
+def close_fence_block(buffer, blocks, output)
+  placeholder = "@@CODE_BLOCK_#{blocks.length + 1}@@\n"
+  blocks << buffer.join
+  output << placeholder
+end
+
+def process_fence_line(line, state)
+  state[:buffer] << line
+  return unless line.start_with?(state[:fence])
+
+  close_fence_block(state[:buffer], state[:blocks], state[:output])
+  state[:buffer] = []
+  state[:in_fence] = false
+  state[:fence] = nil
+end
+
 def mask_code_blocks(text)
-  blocks = []
-  output = []
-  in_fence = false
-  fence = nil
-  buffer = []
+  state = { blocks: [], output: [], in_fence: false, fence: nil, buffer: [] }
 
   text.lines.each do |line|
-    if in_fence
-      buffer << line
-      if line.start_with?(fence)
-        placeholder = "@@CODE_BLOCK_#{blocks.length + 1}@@\n"
-        blocks << buffer.join
-        output << placeholder
-        buffer = []
-        in_fence = false
-        fence = nil
-      end
+    if state[:in_fence]
+      process_fence_line(line, state)
+    elsif line.start_with?('```', '~~~')
+      state[:in_fence] = true
+      state[:fence] = line.start_with?('```') ? '```' : '~~~'
+      state[:buffer] << line
     else
-      if line.start_with?('```') || line.start_with?('~~~')
-        in_fence = true
-        fence = line.start_with?('```') ? '```' : '~~~'
-        buffer << line
-      else
-        output << line
-      end
+      state[:output] << line
     end
   end
 
-  if in_fence
-    output.concat(buffer)
-  end
-
-  [output.join, blocks]
+  state[:output].concat(state[:buffer]) if state[:in_fence]
+  [state[:output].join, state[:blocks]]
 end
 
 def mask_inline_code(text, inline_map)
@@ -135,8 +143,10 @@ def extract_output_text(response)
 
   outputs.each do |item|
     next unless item['type'] == 'message'
+
     content = item['content']
     next unless content.is_a?(Array)
+
     content.each do |part|
       return part['text'] if part['type'] == 'output_text' && part['text']
     end
@@ -174,13 +184,16 @@ payload[:temperature] = options[:temperature] unless options[:temperature].nil?
 
 req.body = JSON.generate(payload)
 
-res = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) do |http|
-  http.request(req)
-end
+http = Net::HTTP.new(uri.hostname, uri.port)
+http.use_ssl = true
+http.verify_mode = OpenSSL::SSL::VERIFY_NONE if options[:insecure]
+http.open_timeout = options[:open_timeout]
+http.read_timeout = options[:read_timeout]
+res = http.request(req)
 
 unless res.is_a?(Net::HTTPSuccess)
   warn "OpenAI API error: HTTP #{res.code}"
-  warn res.body.to_s
+  warn res.body
   exit 1
 end
 
@@ -192,7 +205,7 @@ if translated.nil? || translated.strip.empty?
 end
 
 translated = unmask(translated, blocks, inline_map)
-translated = translated.gsub(/\n{3,}/, "\n\n") + "\n"
+translated = "#{translated.gsub(/\n{3,}/, "\n\n")}\n"
 
 unless options[:dry_run]
   FileUtils.mkdir_p(File.dirname(options[:output]))
@@ -205,7 +218,7 @@ unless options[:dry_run]
     'generated_at' => Time.now.utc.iso8601
   }
   FileUtils.mkdir_p(File.dirname(options[:meta]))
-  File.write(options[:meta], JSON.pretty_generate(meta) + "\n")
+  File.write(options[:meta], "#{JSON.pretty_generate(meta)}\n")
 end
 
 puts "Wrote #{options[:output]}"
