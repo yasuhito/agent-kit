@@ -44,6 +44,11 @@ uv run ~/Work/agent-kit/skills/nano-banana-pro/scripts/generate_image.py --promp
 1. `--api-key` 引数
 2. `GEMINI_API_KEY` 環境変数
 
+1Password から取得する場合：
+```bash
+export GEMINI_API_KEY=$(op read "op://Personal/Gemini API Key/credential")
+```
+
 どちらもなければエラー終了。
 
 ## ファイル名生成
