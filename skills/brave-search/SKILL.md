@@ -20,7 +20,7 @@ npm ci
 
 1Password から取得する場合：
 ```bash
-export BRAVE_API_KEY=$(op read "op://Personal/Brave Search/credential")
+export BRAVE_API_KEY=$(op read "op://Personal/Brave API Key/credential")
 ```
 
 ## 検索
