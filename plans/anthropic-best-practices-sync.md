@@ -30,6 +30,6 @@
 - 出力する best-practices の .md は日本語で生成する。
 - 翻訳は GPT-5 を使用。英語生成後に翻訳を適用し、docs/ に日本語を出力。
 - 翻訳スクリプト追加: scripts/openai_translate_markdown.rb
-- 説明ドキュメント追加: docs/anthropic-best-practices.md
+- 説明ドキュメント追加: plans/anthropic-best-practices-pipeline.md
 - 翻訳スクリプトに --use-1password を追加。tmux 内で op read して OPENAI_API_KEY を取得。
 - GPT-5 では temperature が使えないため、翻訳スクリプトから温度指定を省略（必要時のみ --temperature で指定）。
