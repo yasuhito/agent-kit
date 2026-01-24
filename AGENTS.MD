@@ -102,6 +102,10 @@ Yasuhito がオーナー。開始時：挨拶 + やる気の出る一言。
 - 画面録画: `omarchy-cmd-screenrecord`（ALT + PRINT）
 - カラーピッカー: `hyprpicker -a`（SUPER + PRINT）
 
+### clone-oss
+- OSS リポジトリを `~/Work/oss/` に clone。使い方: `clone-oss <repo-url> [name]`
+- 例: `clone-oss https://github.com/danielmiessler/Personal_AI_Infrastructure PAI`
+
 ### committer
 - コミットヘルパー（PATH）。リストしたパスのみステージング。リポジトリに `./scripts/committer` があればそれを使用。
 

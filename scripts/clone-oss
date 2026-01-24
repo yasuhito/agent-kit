@@ -1,0 +1,41 @@
+#!/bin/bash
+# clone-oss - OSS リポジトリを ~/Work/oss/ に clone
+#
+# 使い方:
+#   clone-oss <repo-url> [name]
+#
+# 例:
+#   clone-oss https://github.com/danielmiessler/Personal_AI_Infrastructure PAI
+#   clone-oss https://github.com/anthropics/claude-code
+#
+# PAI 原則 #5: Code Before Prompts
+
+set -e
+
+DEST="${HOME}/Work/oss"
+
+if [[ -z "$1" ]] || [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
+  echo "使い方: clone-oss <repo-url> [name]"
+  echo ""
+  echo "例:"
+  echo "  clone-oss https://github.com/user/repo"
+  echo "  clone-oss https://github.com/user/repo custom-name"
+  exit 1
+fi
+
+repo="$1"
+name="${2:-$(basename "$repo" .git)}"
+
+mkdir -p "$DEST"
+
+if [[ -d "$DEST/$name" ]]; then
+  echo "⚠️  $DEST/$name は既に存在"
+  echo "   更新: cd $DEST/$name && git pull"
+  exit 1
+fi
+
+echo "📦 Cloning to $DEST/$name ..."
+cd "$DEST" && git clone --depth 1 "$repo" "$name"
+
+echo ""
+echo "✅ $DEST/$name"
