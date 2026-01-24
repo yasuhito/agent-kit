@@ -1,57 +1,57 @@
 ---
 name: brave-search
-description: Web search and content extraction via Brave Search API. Use for searching documentation, facts, or any web content. Lightweight, no browser required.
+description: Brave Search API で Web 検索とコンテンツ抽出。ドキュメント、事実、Web コンテンツの検索に使用。軽量でブラウザ不要。
 ---
 
 # Brave Search
 
-Headless web search and content extraction using Brave Search. No browser required.
+Brave Search を使ったヘッドレス Web 検索とコンテンツ抽出。ブラウザ不要。
 
-## Setup
+## セットアップ
 
-Run once before first use:
+初回使用前に実行：
 
 ```bash
-cd ~/Projects/agent-scripts/skills/brave-search
+cd ~/Work/agent-kit/skills/brave-search
 npm ci
 ```
 
-Needs env: `BRAVE_API_KEY`.
+環境変数が必要: `BRAVE_API_KEY`
 
-## Search
+## 検索
 
 ```bash
-./search.js "query"                    # Basic search (5 results)
-./search.js "query" -n 10              # More results
-./search.js "query" --content          # Include page content as markdown
-./search.js "query" -n 3 --content     # Combined
+./search.js "クエリ"                    # 基本検索（5件）
+./search.js "クエリ" -n 10              # 件数指定
+./search.js "クエリ" --content          # ページコンテンツを Markdown で含める
+./search.js "クエリ" -n 3 --content     # 組み合わせ
 ```
 
-## Extract Page Content
+## ページコンテンツ抽出
 
 ```bash
 ./content.js https://example.com/article
 ```
 
-Fetches a URL and extracts readable content as markdown.
+URL を取得し、読みやすいコンテンツを Markdown で抽出。
 
-## Output Format
+## 出力形式
 
 ```
 --- Result 1 ---
-Title: Page Title
+Title: ページタイトル
 Link: https://example.com/page
-Snippet: Description from search results
-Content: (if --content flag used)
-  Markdown content extracted from the page...
+Snippet: 検索結果からの説明
+Content: (--content フラグ使用時)
+  ページから抽出した Markdown コンテンツ...
 
 --- Result 2 ---
 ...
 ```
 
-## When to Use
+## 使用シーン
 
-- Searching for documentation or API references
-- Looking up facts or current information
-- Fetching content from specific URLs
-- Any task requiring web search without interactive browsing
+- ドキュメントや API リファレンスの検索
+- 事実や最新情報の調査
+- 特定 URL からのコンテンツ取得
+- ブラウザなしで Web 検索が必要なタスク

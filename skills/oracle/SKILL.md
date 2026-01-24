@@ -1,111 +1,93 @@
 ---
 name: oracle
-description: Use the @steipete/oracle CLI to bundle a prompt plus the right files and get a second-model review (API or browser) for debugging, refactors, design checks, or cross-validation.
+description: '@steipete/oracle CLI でプロンプト + ファイルをバンドルし、別モデルでレビュー（API またはブラウザ）。デバッグ、リファクタ、設計チェック、クロス検証に使用。'
 ---
 
-# Oracle (CLI) — best use
+# Oracle (CLI) — 使い方
 
-Oracle bundles your prompt + selected files into one “one-shot” request so another model can answer with real repo context (API or browser automation). Treat outputs as advisory: verify against the codebase + tests.
+Oracle はプロンプト + 選択したファイルを一つの「ワンショット」リクエストにバンドルし、別モデルが実際のリポジトリコンテキストで回答できるようにする（API またはブラウザ自動化）。出力はアドバイスとして扱い、コードベース + テストで検証すること。
 
-## Main use case (browser, GPT‑5.2 Pro)
+## 主な使い方（ブラウザ、GPT-5.2 Pro）
 
-Default workflow here: `--engine browser` with GPT‑5.2 Pro in ChatGPT. This is the “human in the loop” path: it can take ~10 minutes to ~1 hour; expect a stored session you can reattach to.
+デフォルトワークフロー: `--engine browser` で ChatGPT の GPT-5.2 Pro を使用。これは「ヒューマン・イン・ザ・ループ」パス: 10分〜1時間かかることがある。再アタッチ可能なセッションが保存される。
 
-Recommended defaults:
-- Engine: browser (`--engine browser`)
-- Model: GPT‑5.2 Pro (either `--model gpt-5.2-pro` or a ChatGPT picker label like `--model "5.2 Pro"`)
-- Attachments: directories/globs + excludes; avoid secrets.
+推奨デフォルト:
+- エンジン: browser (`--engine browser`)
+- モデル: GPT-5.2 Pro (`--model gpt-5.2-pro` または `--model "5.2 Pro"`)
+- 添付: ディレクトリ/glob + 除外。シークレットは避ける。
 
-## Golden path (fast + reliable)
+## ゴールデンパス（高速 + 信頼性）
 
-1. Pick a tight file set (fewest files that still contain the truth).
-2. Preview what you’re about to send (`--dry-run` + `--files-report` when needed).
-3. Run in browser mode for the usual GPT‑5.2 Pro ChatGPT workflow; use API only when you explicitly want it.
-4. If the run detaches/timeouts: reattach to the stored session (don’t re-run).
+1. 小さなファイルセットを選ぶ（真実を含む最小限のファイル）
+2. 送信内容をプレビュー（`--dry-run` + 必要なら `--files-report`）
+3. 通常の GPT-5.2 Pro ChatGPT ワークフローにはブラウザモード。API は明示的に使いたい時のみ
+4. 実行がデタッチ/タイムアウトしたら: 保存されたセッションに再アタッチ（再実行しない）
 
-## Commands (preferred)
+## コマンド
 
-- Show help (once/session):
+- ヘルプ表示（セッションごとに1回）:
   - `npx -y @steipete/oracle --help`
 
-- Preview (no tokens):
-  - `npx -y @steipete/oracle --dry-run summary -p "<task>" --file "src/**" --file "!**/*.test.*"`
-  - `npx -y @steipete/oracle --dry-run full -p "<task>" --file "src/**"`
+- プレビュー（トークン消費なし）:
+  - `npx -y @steipete/oracle --dry-run summary -p "<タスク>" --file "src/**" --file "!**/*.test.*"`
 
-- Token/cost sanity:
-  - `npx -y @steipete/oracle --dry-run summary --files-report -p "<task>" --file "src/**"`
+- トークン/コスト確認:
+  - `npx -y @steipete/oracle --dry-run summary --files-report -p "<タスク>" --file "src/**"`
 
-- Browser run (main path; long-running is normal):
-  - `npx -y @steipete/oracle --engine browser --model gpt-5.2-pro -p "<task>" --file "src/**"`
+- ブラウザ実行（メインパス、長時間は正常）:
+  - `npx -y @steipete/oracle --engine browser --model gpt-5.2-pro -p "<タスク>" --file "src/**"`
 
-- Manual paste fallback (assemble bundle, copy to clipboard):
-  - `npx -y @steipete/oracle --render --copy -p "<task>" --file "src/**"`
-  - Note: `--copy` is a hidden alias for `--copy-markdown`.
+- 手動ペーストフォールバック（バンドル作成、クリップボードにコピー）:
+  - `npx -y @steipete/oracle --render --copy -p "<タスク>" --file "src/**"`
 
-## Attaching files (`--file`)
+## ファイル添付 (`--file`)
 
-`--file` accepts files, directories, and globs. You can pass it multiple times; entries can be comma-separated.
+`--file` はファイル、ディレクトリ、glob を受け付ける。複数回指定可能。
 
-- Include:
-  - `--file "src/**"` (directory glob)
-  - `--file src/index.ts` (literal file)
-  - `--file docs --file README.md` (literal directory + file)
+- 含める:
+  - `--file "src/**"`（ディレクトリ glob）
+  - `--file src/index.ts`（リテラルファイル）
+  - `--file docs --file README.md`（ディレクトリ + ファイル）
 
-- Exclude (prefix with `!`):
+- 除外（`!` プレフィックス）:
   - `--file "src/**" --file "!src/**/*.test.ts" --file "!**/*.snap"`
 
-- Defaults (important behavior from the implementation):
-  - Default-ignored dirs: `node_modules`, `dist`, `coverage`, `.git`, `.turbo`, `.next`, `build`, `tmp` (skipped unless you explicitly pass them as literal dirs/files).
-  - Honors `.gitignore` when expanding globs.
-  - Does not follow symlinks (glob expansion uses `followSymbolicLinks: false`).
-  - Dotfiles are filtered unless you explicitly opt in with a pattern that includes a dot-segment (e.g. `--file ".github/**"`).
-  - Hard cap: files > 1 MB are rejected (split files or narrow the match).
+- デフォルト動作:
+  - デフォルト除外: `node_modules`, `dist`, `coverage`, `.git`, `.turbo`, `.next`, `build`, `tmp`
+  - glob 展開時は `.gitignore` を尊重
+  - シンボリックリンクを追わない
+  - 1MB 超のファイルは拒否
 
-## Budget + observability
+## バジェット + 観察可能性
 
-- Target: keep total input under ~196k tokens.
-- Use `--files-report` (and/or `--dry-run json`) to spot the token hogs before spending.
-- If you need hidden/advanced knobs: `npx -y @steipete/oracle --help --verbose`.
+- 目標: 入力合計を ~196k トークン以下に
+- `--files-report` でトークン消費の多いファイルを事前に確認
 
-## Engines (API vs browser)
+## エンジン（API vs ブラウザ）
 
-- Auto-pick: uses `api` when `OPENAI_API_KEY` is set, otherwise `browser`.
-- Browser engine supports GPT + Gemini only; use `--engine api` for Claude/Grok/Codex or multi-model runs.
-- **API runs require explicit user consent** before starting because they incur usage costs.
-- Browser attachments:
-  - `--browser-attachments auto|never|always` (auto pastes inline up to ~60k chars then uploads).
-- Remote browser host (signed-in machine runs automation):
-  - Host: `oracle serve --host 0.0.0.0 --port 9473 --token <secret>`
-  - Client: `oracle --engine browser --remote-host <host:port> --remote-token <secret> -p "<task>" --file "src/**"`
+- 自動選択: `OPENAI_API_KEY` があれば `api`、なければ `browser`
+- ブラウザエンジンは GPT + Gemini のみ対応。Claude/Grok/Codex には `--engine api` を使用
+- **API 実行はコストが発生するため、開始前にユーザーの明示的同意が必要**
 
-## Sessions + slugs (don’t lose work)
+## セッション + slug
 
-- Stored under `~/.oracle/sessions` (override with `ORACLE_HOME_DIR`).
-- Runs may detach or take a long time (browser + GPT‑5.2 Pro often does). If the CLI times out: don’t re-run; reattach.
-  - List: `oracle status --hours 72`
-  - Attach: `oracle session <id> --render`
-- Use `--slug "<3-5 words>"` to keep session IDs readable.
-- Duplicate prompt guard exists; use `--force` only when you truly want a fresh run.
+- `~/.oracle/sessions` に保存
+- 実行がデタッチ/タイムアウトしたら再アタッチ:
+  - 一覧: `oracle status --hours 72`
+  - アタッチ: `oracle session <id> --render`
+- `--slug "<3-5 words>"` でセッション ID を読みやすく
 
-## Prompt template (high signal)
+## プロンプトテンプレート
 
-Oracle starts with **zero** project knowledge. Assume the model cannot infer your stack, build tooling, conventions, or “obvious” paths. Include:
-- Project briefing (stack + build/test commands + platform constraints).
-- “Where things live” (key directories, entrypoints, config files, dependency boundaries).
-- Exact question + what you tried + the error text (verbatim).
-- Constraints (“don’t change X”, “must keep public API”, “perf budget”, etc).
-- Desired output (“return patch plan + tests”, “list risky assumptions”, “give 3 options with tradeoffs”).
+Oracle はプロジェクト知識**ゼロ**で開始。含めるべき内容:
+- プロジェクト概要（スタック + ビルド/テストコマンド + プラットフォーム制約）
+- "どこに何があるか"（主要ディレクトリ、エントリポイント、設定ファイル）
+- 具体的な質問 + 試したこと + エラーテキスト（そのまま）
+- 制約（"X は変えないで", "公開 API は維持", "パフォーマンス予算"）
+- 望む出力（"パッチ計画 + テストを返して", "リスクのある仮定を列挙", "トレードオフ付きで3つの選択肢"）
 
-### “Exhaustive prompt” pattern (for later restoration)
+## 安全性
 
-When you know this will be a long investigation, write a prompt that can stand alone later:
-- Top: 6–30 sentence project briefing + current goal.
-- Middle: concrete repro steps + exact errors + what you already tried.
-- Bottom: attach *all* context files needed so a fresh model can fully understand (entrypoints, configs, key modules, docs).
-
-If you need to reproduce the same context later, re-run with the same prompt + `--file …` set (Oracle runs are one-shot; the model doesn’t remember prior runs).
-
-## Safety
-
-- Don’t attach secrets by default (`.env`, key files, auth tokens). Redact aggressively; share only what’s required.
-- Prefer “just enough context”: fewer files + better prompt beats whole-repo dumps.
+- デフォルトでシークレットを添付しない（`.env`、キーファイル、認証トークン）
+- 必要なものだけ共有。積極的に墨消し
+- "必要十分なコンテキスト"を優先: 少ないファイル + 良いプロンプト > リポジトリ全体

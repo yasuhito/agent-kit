@@ -1,93 +1,93 @@
 ---
 name: research
-description: Deep research via Gemini CLI — runs in background sub-agent so you don't burn your Claude tokens.
+description: Gemini CLI で深いリサーチ — バックグラウンドサブエージェントで実行するので Claude トークンを消費しない。
 homepage: https://github.com/google/gemini-cli
 metadata: {"clawdbot":{"emoji":"🔬","requires":{"bins":["gemini"]}}}
 ---
 
-# Research Skill
+# リサーチスキル
 
-Conduct deep research on any topic using Gemini CLI via a spawned sub-agent. Uses your Google AI subscription instead of Claude tokens — perfect for long research tasks that would otherwise eat your Clawdbot usage.
+Gemini CLI を使ったサブエージェントで任意のトピックを深くリサーチ。Claude トークンではなく Google AI サブスクリプションを使用 — Clawdbot の使用量を消費する長いリサーチタスクに最適。
 
-## How It Works
+## 仕組み
 
-**When user says "Research: [topic]" or asks for deep research:**
+**ユーザーが「リサーチ: [トピック]」や深いリサーチを求めた時:**
 
-### Step 1: Clarifying Questions (Always)
+### ステップ 1: 確認質問（常に）
 
-Before running any research, ask 2-3 quick questions to focus the work:
+リサーチ実行前に、2-3 の質問で焦点を絞る:
 
-**Start with the goal:**
-> "Before I dive in - what's your goal here? Are you learning about this topic, making a decision, writing something, or just curious?"
+**まず目的を確認:**
+> 「始める前に - 目的は何？このトピックを学びたい、意思決定したい、何か書きたい、それとも単に興味？」
 
-**Then adapt based on their answer:**
+**回答に応じて適応:**
 
-If learning/curious:
-- "Any specific aspect you're most interested in?"
-- "How technical should I go? (High-level overview vs deep technical detail)"
+学習/興味の場合:
+- 「特に興味のある側面は？」
+- 「どのくらい技術的に？（概要 vs 詳細）」
 
-If decision-making:
-- "What decision are you trying to make?"
-- "Any specific criteria or constraints I should focus on?"
+意思決定の場合:
+- 「どんな決定をしようとしてる？」
+- 「特定の基準や制約は？」
 
-If writing/creating:
-- "What's the output? (Blog post, report, presentation?)"
-- "Who's the audience?"
+執筆/作成の場合:
+- 「アウトプットは？（ブログ、レポート、プレゼン？）」
+- 「対象読者は？」
 
-**Keep it natural — 2-3 questions max.** Don't interrogate.
+**自然に保つ — 最大 2-3 質問。** 尋問しない。
 
-### Step 2: Spawn Research Agent
+### ステップ 2: リサーチエージェントを起動
 
-Once you have context, use `sessions_spawn` to run the research:
+コンテキストを得たら、`sessions_spawn` でリサーチ実行:
 
 ```
 sessions_spawn(
-  task: "Research: [FULL TOPIC WITH CONTEXT]
+  task: "リサーチ: [コンテキスト付きの完全なトピック]
   
-Use Gemini CLI to research this topic. Run:
+Gemini CLI でこのトピックをリサーチ。実行:
 
-gemini --yolo \"[RESEARCH PROMPT]\"
+gemini --yolo \"[リサーチプロンプト]\"
 
-The research prompt should ask Gemini to cover:
-1. Overview & Core Concepts - what is this, terminology, why it matters
-2. Current State - latest developments, major players
-3. Technical Deep Dive - how it works, mechanisms, key techniques
-4. Practical Applications - real-world use cases, tools available
-5. Challenges & Open Problems - technical, ethical, barriers
-6. Future Outlook - trends, predictions, emerging areas
-7. Resources - key papers, researchers, communities, courses
+リサーチプロンプトは Gemini に以下をカバーさせる:
+1. 概要 & コア概念 - これは何か、用語、なぜ重要か
+2. 現状 - 最新の発展、主要プレイヤー
+3. 技術的詳細 - どう動くか、メカニズム、主要技術
+4. 実用的応用 - 実世界のユースケース、利用可能なツール
+5. 課題 & 未解決問題 - 技術的、倫理的、障壁
+6. 将来展望 - トレンド、予測、新興分野
+7. リソース - 主要論文、研究者、コミュニティ、コース
 
-Save the output to: ~/clawd/research/[slug]/research.md
+出力を保存: ~/clawd/research/[slug]/research.md
 
-Be thorough (aim for 500+ lines). Include specific examples and citations.
+徹底的に（500行以上を目指す）。具体例と引用を含める。
 
-IMPORTANT - When research is complete:
-1. Send a wake event to notify the main agent immediately:
-   cron(action: 'wake', text: '🔬 Research complete: [TOPIC]. Key findings: [2-3 bullet points]. Full report: ~/clawd/research/[slug]/research.md', mode: 'now')
-2. When asked to produce an announce message, reply exactly: ANNOUNCE_SKIP",
+重要 - リサーチ完了時:
+1. メインエージェントに即座に通知するウェイクイベントを送信:
+   cron(action: 'wake', text: '🔬 リサーチ完了: [トピック]。主な発見: [2-3 箇条書き]。完全レポート: ~/clawd/research/[slug]/research.md', mode: 'now')
+2. アナウンスメッセージを求められたら、正確に返答: ANNOUNCE_SKIP",
   label: "research-[slug]"
 )
 ```
 
-**Important:** Include all context from your conversation in the task so the sub-agent understands the full picture.
+**重要:** サブエージェントが全体像を理解できるよう、タスクに会話のコンテキストをすべて含める。
 
-### Step 3: When You Receive Wake Event
+### ステップ 3: ウェイクイベント受信時
 
-You'll receive a wake with the research summary. Then:
-- Share the findings with the user
-- Offer to read the full report or dive deeper on sections
+リサーチサマリー付きのウェイクを受け取ったら:
+- ユーザーに発見を共有
+- 完全レポートの読み込みやセクションの深掘りを提案
 
-## Output Location
+## 出力場所
 
-Research saved to:
+リサーチの保存先:
 ```
 ~/clawd/research/<slug>/research.md
 ```
 
-## Tips
+## ヒント
 
-- Research typically takes 3-8 minutes depending on complexity
-- Gemini CLI uses your Google AI subscription quota
-- The `--yolo` flag auto-approves file operations (non-interactive)
-- Check `~/clawd/research/` for all past research
-- Always include conversation context in the spawn task for better results
+- リサーチは複雑さに応じて通常 3-8 分かかる
+- Gemini CLI は Google AI サブスクリプションのクォータを使用
+- `--yolo` フラグはファイル操作を自動承認（非対話的）
+- 過去のリサーチは `~/clawd/research/` を確認
+- より良い結果のため、spawn タスクに常に会話コンテキストを含める
