@@ -13,19 +13,20 @@ Fetch documentation from URLs and store immutable snapshots plus fetch state. Us
 
 ```bash
 # list tracked sources from state
-skills/doc-fetcher/scripts/doc_fetcher.rb --list
+skills/doc-fetcher/scripts/doc_fetcher.rb list
 
 # fetch a single URL
-skills/doc-fetcher/scripts/doc_fetcher.rb --url https://code.claude.com/docs/en/best-practices.md
+skills/doc-fetcher/scripts/doc_fetcher.rb fetch --url https://code.claude.com/docs/en/best-practices.md
 
 # fetch a URL (id is derived from the URL)
-skills/doc-fetcher/scripts/doc_fetcher.rb --url https://example.com/docs.md
+skills/doc-fetcher/scripts/doc_fetcher.rb fetch --url https://example.com/docs.md
 ```
 
 ## Inputs
 
-- URLs passed via `--url` (repeatable, required unless using `--list`)
-- Optional CLI flags: `--force`, `--dry-run`, `--list`
+- `list` subcommand (optional `--url`)
+- `fetch` subcommand requires `--url` (repeatable)
+- Optional flags for `fetch`: `--force`, `--dry-run`, `--insecure`
 
 ## Outputs
 
@@ -36,17 +37,19 @@ skills/doc-fetcher/scripts/doc_fetcher.rb --url https://example.com/docs.md
 ## Workflow
 
 1. Decide the URL(s) to fetch.
-2. Run `skills/doc-fetcher/scripts/doc_fetcher.rb --url <url>` (repeat for multiple URLs).
+2. Run `skills/doc-fetcher/scripts/doc_fetcher.rb fetch --url <url>` (repeat for multiple URLs).
 3. Confirm new snapshots and `state.json` updates.
 
 ## Options
 
-- `--force`: Skip conditional headers and always download.
-- `--dry-run`: Do not write files.
-- `--list`: Print sources tracked in `data/doc-fetcher/state.json` (or provided URLs).
+- `list`: Print sources tracked in `data/doc-fetcher/state.json` (or provided URLs via `--url`).
+- `fetch`: Download snapshots for provided URLs.
+- `fetch --force`: Skip conditional headers and always download.
+- `fetch --dry-run`: Do not write files.
+- `fetch --insecure`: Skip SSL certificate verification.
 
 ## Notes
 
 - Prefer `.md` endpoints when available to avoid HTML normalization.
-- IDs are derived from URLs. Use `--list --url <url>` to preview the generated id.
+- IDs are derived from URLs. Use `list --url <url>` to preview the generated id.
 - The data root is fixed to `data/doc-fetcher/`. For other pipelines, copy the script and update `DATA_DIR`.

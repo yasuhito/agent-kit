@@ -94,7 +94,7 @@ for url in "${DEFAULT_URLS[@]}"; do
   URL_ARGS+=(--url "$url")
 done
 
-mapfile -t ID_LINES < <("$ROOT/skills/doc-fetcher/scripts/doc_fetcher.rb" --list "${URL_ARGS[@]}")
+mapfile -t ID_LINES < <("$ROOT/skills/doc-fetcher/scripts/doc_fetcher.rb" list "${URL_ARGS[@]}")
 
 declare -A URL_BY_ID
 IDS=()
@@ -130,7 +130,7 @@ for url in "${FETCH_URLS[@]}"; do
 done
 
 echo "=== Fetching sources ==="
-run skills/doc-fetcher/scripts/doc_fetcher.rb "${FETCH_ARGS[@]}" $INSECURE_FLAG
+run skills/doc-fetcher/scripts/doc_fetcher.rb fetch "${FETCH_ARGS[@]}" $INSECURE_FLAG
 
 echo "=== Normalizing sources ==="
 run skills/md-normalizer/scripts/anthropic_normalize.rb "${SOURCE_SELECTOR[@]}"

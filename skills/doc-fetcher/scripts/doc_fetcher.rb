@@ -29,24 +29,51 @@ STATE_FILE = File.join(DATA_DIR, 'state.json')
 SNAPSHOT_DIR = File.join(DATA_DIR, 'snapshots')
 USER_AGENT = 'agent-kit-doc-fetcher/0.1'
 
-OPTIONS = {
+def usage
+  basename = File.basename($PROGRAM_NAME)
+  <<~USAGE
+    Usage:
+      #{basename} list [--url URL ...]
+      #{basename} fetch --url URL [--url URL ...] [--force] [--dry-run] [--insecure]
+  USAGE
+end
+
+subcommand = ARGV.shift
+unless %w[list fetch].include?(subcommand)
+  warn usage
+  exit 1
+end
+
+options = {
   urls: [],
   force: false,
   dry_run: false,
-  list: false,
   insecure: false
-}.freeze
+}
 
-options = OPTIONS.dup
-
-OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename($PROGRAM_NAME)} [options]"
-  opts.on('--url URL', 'Fetch a URL directly (repeatable, id derived from URL)') { |url| options[:urls] << url }
-  opts.on('--force', 'Skip conditional headers and always download') { options[:force] = true }
-  opts.on('--dry-run', 'Do not write files') { options[:dry_run] = true }
-  opts.on('--list', 'List sources from state (or provided URLs)') { options[:list] = true }
-  opts.on('--insecure', 'Skip SSL certificate verification') { options[:insecure] = true }
-end.parse!
+case subcommand
+when 'list'
+  OptionParser.new do |opts|
+    opts.banner = "Usage: #{File.basename($PROGRAM_NAME)} list [options]"
+    opts.on('--url URL', 'Print derived id for URL (repeatable)') { |url| options[:urls] << url }
+    opts.on('-h', '--help', 'Show this help') do
+      puts opts
+      exit 0
+    end
+  end.parse!
+when 'fetch'
+  OptionParser.new do |opts|
+    opts.banner = "Usage: #{File.basename($PROGRAM_NAME)} fetch [options]"
+    opts.on('--url URL', 'Fetch a URL directly (repeatable, id derived from URL)') { |url| options[:urls] << url }
+    opts.on('--force', 'Skip conditional headers and always download') { options[:force] = true }
+    opts.on('--dry-run', 'Do not write files') { options[:dry_run] = true }
+    opts.on('--insecure', 'Skip SSL certificate verification') { options[:insecure] = true }
+    opts.on('-h', '--help', 'Show this help') do
+      puts opts
+      exit 0
+    end
+  end.parse!
+end
 
 def parse_url(url)
   URI(url)
@@ -190,7 +217,7 @@ def write_snapshot(id, url, response, body, dry_run)
   }
 end
 
-if options[:list]
+if subcommand == 'list'
   if options[:urls].any?
     build_sources_from_urls(options[:urls]).each do |source|
       puts "#{source['id']}\t#{source['url']}"

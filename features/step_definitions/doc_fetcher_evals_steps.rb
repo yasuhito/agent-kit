@@ -7,7 +7,7 @@ require 'fileutils'
 ROOT = File.expand_path('../../..', __dir__)
 RUNS_DIR = File.join(ROOT, 'evals', 'doc-fetcher', 'runs')
 PATH_RE = %r{skills/doc-fetcher/scripts/doc_fetcher\.rb}
-LIST_CMD_RE = %r{#{PATH_RE}.*\s--list(?:\s|$|'|\")}i
+LIST_CMD_RE = %r{#{PATH_RE}\s+list(?:\s|$|'|\")}i
 
 def extract_commands(run_path)
   commands = []
@@ -65,12 +65,4 @@ Then('list コマンドが実行されていない') do
   list_cmds = commands.select { |cmd| cmd.match?(LIST_CMD_RE) }
 
   raise 'unexpected list command found' unless list_cmds.empty?
-end
-
-Then('list コマンドに --all や --id が含まれない') do
-  commands = extract_commands(@run_path)
-  list_cmds = commands.select { |cmd| cmd.match?(LIST_CMD_RE) }
-
-  raise 'list command not found' if list_cmds.empty?
-  raise 'list command includes --all or --id' if list_cmds.any? { |cmd| cmd.match?(/--all|--id/i) }
 end
