@@ -1,6 +1,6 @@
 ---
 name: md-normalizer
-description: Normalize Markdown or HTML snapshots into canonical Markdown using skills/md-normalizer/scripts/anthropic_normalize.rb with optional pandoc fallback. Use when you need deterministic normalization before section splitting or extraction.
+description: Normalize Markdown or HTML snapshots into canonical Markdown using skills/md-normalizer/scripts/md_normalizer.rb with optional pandoc fallback. Use when you need deterministic normalization before section splitting or extraction.
 ---
 
 # MD Normalizer
@@ -13,13 +13,13 @@ Normalize snapshot content (Markdown or HTML) into stable GitHub-flavored Markdo
 
 ```bash
 # list sources and their last snapshot path
-skills/md-normalizer/scripts/anthropic_normalize.rb list
+skills/md-normalizer/scripts/md_normalizer.rb list
 
 # normalize all sources in state.json
-skills/md-normalizer/scripts/anthropic_normalize.rb normalize --all
+skills/md-normalizer/scripts/md_normalizer.rb normalize --all
 
 # normalize a single source by id
-skills/md-normalizer/scripts/anthropic_normalize.rb normalize --id best-practices
+skills/md-normalizer/scripts/md_normalizer.rb normalize --id best-practices
 ```
 
 ## Inputs
@@ -50,4 +50,4 @@ skills/md-normalizer/scripts/anthropic_normalize.rb normalize --id best-practice
 ## Notes
 
 - Prefers `.md` snapshot passthrough; uses `pandoc` for HTML.
-- A wrapper exists at `scripts/anthropic_normalize.rb` for backward compatibility.
+- A wrapper exists at `scripts/md_normalizer.rb`.

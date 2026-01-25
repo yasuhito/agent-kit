@@ -26,13 +26,13 @@ flowchart TD
    ※ id は URL から自動生成される（`list --url <url>` で確認可能）
 
 2. 正規化  
-   `skills/md-normalizer/scripts/anthropic_normalize.rb normalize --all`
+   `skills/md-normalizer/scripts/md_normalizer.rb normalize --all`
 
 3. セクション分割  
-   `skills/md-section-splitter/scripts/anthropic_split_sections.rb split --all`
+   `skills/md-section-splitter/scripts/md_section_splitter.rb split --all`
 
 4. 英語変換（MDX タグ等を標準 Markdown へ）  
-   `skills/md-converter/scripts/anthropic_convert.rb convert --all`
+   `skills/md-converter/scripts/md_converter.rb convert --all`
 
 5. 翻訳（GPT-5）  
    `OPENAI_API_KEY=... skills/md-translator/scripts/openai_translate_markdown.rb`  

@@ -7,15 +7,7 @@
   シナリオ: list: 追跡中 URL の一覧を表示する
     前提 doc-fetcher eval ケース "list-tracked-urls" のプロンプト:
       """
-      doc-fetcher で追跡中の URL 一覧を表示して
-      """
-    もし Codex でプロンプトを実行する
-    ならば list コマンドが有効に実行されている
-
-  シナリオ: list: state.json の sources を一覧表示する
-    前提 doc-fetcher eval ケース "list-state-sources" のプロンプト:
-      """
-      doc-fetcher の state.json にある sources を一覧で見せて
+      doc-fetcher スキルで追跡中の URL 一覧を表示して。`skills/doc-fetcher/scripts/doc_fetcher.rb list` を使う想定。
       """
     もし Codex でプロンプトを実行する
     ならば list コマンドが有効に実行されている
@@ -23,23 +15,7 @@
   シナリオ: list: 登録済みソースを一覧表示する
     前提 doc-fetcher eval ケース "list-registered-sources" のプロンプト:
       """
-      doc-fetcher の登録済みソースを一覧表示して
-      """
-    もし Codex でプロンプトを実行する
-    ならば list コマンドが有効に実行されている
-
-  シナリオ: list: 追跡 URL の一覧がほしい
-    前提 doc-fetcher eval ケース "list-followed-urls" のプロンプト:
-      """
-      追跡している URL の一覧がほしい
-      """
-    もし Codex でプロンプトを実行する
-    ならば list コマンドが有効に実行されている
-
-  シナリオ: list: doc-fetcher のソース一覧を出す
-    前提 doc-fetcher eval ケース "list-doc-fetcher-sources" のプロンプト:
-      """
-      doc-fetcher のソース一覧を出して
+      doc-fetcher スキルで登録済みソース一覧を出して。`skills/doc-fetcher/scripts/doc_fetcher.rb list` を使う想定。
       """
     もし Codex でプロンプトを実行する
     ならば list コマンドが有効に実行されている
@@ -47,7 +23,7 @@
   シナリオ: list: 登録済み URL を教える
     前提 doc-fetcher eval ケース "list-registered-urls" のプロンプト:
       """
-      doc-fetcher の登録済み URL を教えて
+      doc-fetcher スキルで登録済み URL を教えて。`skills/doc-fetcher/scripts/doc_fetcher.rb list` を使う想定。
       """
     もし Codex でプロンプトを実行する
     ならば list コマンドが有効に実行されている

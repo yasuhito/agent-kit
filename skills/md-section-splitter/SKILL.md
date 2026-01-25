@@ -1,6 +1,6 @@
 ---
 name: md-section-splitter
-description: Split normalized Markdown into H2 sections using skills/md-section-splitter/scripts/anthropic_split_sections.rb, producing per-section files and index metadata. Use when you need deterministic sectionization for extraction or review.
+description: Split normalized Markdown into H2 sections using skills/md-section-splitter/scripts/md_section_splitter.rb, producing per-section files and index metadata. Use when you need deterministic sectionization for extraction or review.
 ---
 
 # MD Section Splitter
@@ -13,13 +13,13 @@ Split normalized Markdown into H2 sections while preserving code fences and outp
 
 ```bash
 # list sources and their last normalized path
-skills/md-section-splitter/scripts/anthropic_split_sections.rb list
+skills/md-section-splitter/scripts/md_section_splitter.rb list
 
 # split all sources in state.json
-skills/md-section-splitter/scripts/anthropic_split_sections.rb split --all
+skills/md-section-splitter/scripts/md_section_splitter.rb split --all
 
 # split a single source by id
-skills/md-section-splitter/scripts/anthropic_split_sections.rb split --id best-practices
+skills/md-section-splitter/scripts/md_section_splitter.rb split --id best-practices
 ```
 
 ## Inputs
@@ -50,4 +50,4 @@ skills/md-section-splitter/scripts/anthropic_split_sections.rb split --id best-p
 ## Notes
 
 - H2 is treated as a section boundary; code fences are respected.
-- A wrapper exists at `scripts/anthropic_split_sections.rb` for backward compatibility.
+- A wrapper exists at `scripts/md_section_splitter.rb`.

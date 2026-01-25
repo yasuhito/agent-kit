@@ -13,13 +13,13 @@ Converts normalized markdown documents to clean output format, transforming MDX-
 
 ```bash
 # list sources and their last normalized path
-skills/md-converter/scripts/anthropic_convert.rb list
+skills/md-converter/scripts/md_converter.rb list
 
 # convert all sources in state.json
-skills/md-converter/scripts/anthropic_convert.rb convert --all
+skills/md-converter/scripts/md_converter.rb convert --all
 
 # convert a single source by id
-skills/md-converter/scripts/anthropic_convert.rb convert --id best-practices
+skills/md-converter/scripts/md_converter.rb convert --id best-practices
 ```
 
 ## Options

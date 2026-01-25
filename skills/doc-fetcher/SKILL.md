@@ -13,6 +13,7 @@ Fetch documentation from URLs and store immutable snapshots plus fetch state. Us
 
 - Subcommand-based: `list` or `fetch` only.
 - If unsure, run `skills/doc-fetcher/scripts/doc_fetcher.rb --help` first.
+- Always invoke `skills/doc-fetcher/scripts/doc_fetcher.rb` (there is no `doc-fetcher` binary in PATH).
 
 ## Intent → Command
 

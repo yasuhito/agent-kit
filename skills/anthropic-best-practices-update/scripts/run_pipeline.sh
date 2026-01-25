@@ -133,13 +133,13 @@ echo "=== Fetching sources ==="
 run skills/doc-fetcher/scripts/doc_fetcher.rb fetch "${FETCH_ARGS[@]}" $INSECURE_FLAG
 
 echo "=== Normalizing sources ==="
-run skills/md-normalizer/scripts/anthropic_normalize.rb normalize "${SOURCE_SELECTOR[@]}"
+run skills/md-normalizer/scripts/md_normalizer.rb normalize "${SOURCE_SELECTOR[@]}"
 
 echo "=== Splitting sections ==="
-run skills/md-section-splitter/scripts/anthropic_split_sections.rb split "${SOURCE_SELECTOR[@]}"
+run skills/md-section-splitter/scripts/md_section_splitter.rb split "${SOURCE_SELECTOR[@]}"
 
 echo "=== Converting to markdown ==="
-run skills/md-converter/scripts/anthropic_convert.rb convert "${SOURCE_SELECTOR[@]}"
+run skills/md-converter/scripts/md_converter.rb convert "${SOURCE_SELECTOR[@]}"
 
 if [ "$SKIP_TRANSLATE" -eq 1 ]; then
   echo "Translation skipped."

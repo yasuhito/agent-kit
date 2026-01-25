@@ -22,11 +22,11 @@
 - 取得ツール作成: skills/doc-fetcher/scripts/doc_fetcher.rb（正本）
 - データ保存先: data/doc-fetcher/ (state.json, snapshots/)
 - メモ: add-skill CLI の利用を検討。後回し。
-- 正規化: pandoc を使用。skills/md-normalizer/scripts/anthropic_normalize.rb 追加（正本）。
+- 正規化: pandoc を使用。skills/md-normalizer/scripts/md_normalizer.rb 追加（正本）。
 - 正規化MarkdownをH2単位で分割し、index.md + 連番セクション.md を生成する方針。
-- 分割ツール作成: skills/md-section-splitter/scripts/anthropic_split_sections.rb（正本）
+- 分割ツール作成: skills/md-section-splitter/scripts/md_section_splitter.rb（正本）
 - 公式Docsは .md エンドポイントを優先して取得する（例: /best-practices.md）。HTMLはフォールバック。
-- 正規化 Markdown の変換スクリプト作成: skills/md-converter/scripts/anthropic_convert.rb（正本）
+- 正規化 Markdown の変換スクリプト作成: skills/md-converter/scripts/md_converter.rb（正本）
 - 出力する best-practices の .md は日本語で生成する。
 - 翻訳は GPT-5 を使用。英語生成後に翻訳を適用し、docs/ に日本語を出力。
 - 翻訳スクリプト追加: skills/md-translator/scripts/openai_translate_markdown.rb（正本）
