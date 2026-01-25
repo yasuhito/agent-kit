@@ -6,6 +6,7 @@ gem 'rake', '~> 13.2'
 gem 'openssl', '~> 3.3.2'
 
 group :development do
+  gem 'cucumber', '~> 9.1'
   gem 'flay', '~> 2.13'
   gem 'flog', '~> 4.8'
   gem 'reek', '~> 6.3'
