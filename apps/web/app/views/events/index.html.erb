@@ -1,0 +1,28 @@
+<div class="page">
+  <header class="page-header">
+    <div>
+      <h1>SignalShelf Events</h1>
+      <p class="subtitle">Captured agent events from SignalShelf/UOCS.</p>
+    </div>
+    <div class="meta">
+      <div class="meta-label">Source</div>
+      <div class="meta-value"><%= @source_label %></div>
+      <div class="meta-label">Count</div>
+      <div class="meta-value"><%= @events.size %></div>
+    </div>
+  </header>
+
+  <% if @events.empty? %>
+    <div class="empty-state">
+      <p>No events found.</p>
+      <p>
+        Set <code>SIGNALSHELF_EVENTS_PATH</code> to a JSONL file containing events,
+        then reload this page.
+      </p>
+    </div>
+  <% else %>
+    <section class="events">
+      <%= render @events %>
+    </section>
+  <% end %>
+</div>

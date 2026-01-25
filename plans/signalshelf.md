@@ -126,3 +126,8 @@ transcript_path: /path/to/transcript.jsonl
 
 - Observability ダッシュボード連携（イベント送信）: 依存先が未用意のため保留
 - 通知（push/ローカル通知）: 依存先が未用意のため保留
+
+## 実装メモ（進行中）
+
+- 観測 UI（Rails）: `apps/web` で JSONL を読み込み表示する最小ビューを用意
+  - `SIGNALSHELF_EVENTS_PATH` でイベントの JSONL パスを指定

@@ -1,0 +1,33 @@
+<article class="event-card">
+  <header class="event-header">
+    <div class="event-badges">
+      <span class="badge badge-type"><%= event.hook_event_type.presence || 'unknown' %></span>
+      <% if event.agent_name.present? %>
+        <span class="badge badge-agent"><%= event.agent_name %></span>
+      <% end %>
+    </div>
+    <time class="event-time"><%= event.timestamp_label %></time>
+  </header>
+
+  <div class="event-summary">
+    <%= event.summary.presence || '(no summary)' %>
+  </div>
+
+  <dl class="event-meta">
+    <div>
+      <dt>source</dt>
+      <dd><%= event.source_app.presence || 'unknown' %></dd>
+    </div>
+    <div>
+      <dt>session</dt>
+      <dd><%= event.session_id.presence || 'unknown' %></dd>
+    </div>
+  </dl>
+
+  <% if event.payload.present? %>
+    <details class="event-payload">
+      <summary>payload</summary>
+      <pre><%= JSON.pretty_generate(event.payload) %></pre>
+    </details>
+  <% end %>
+</article>
