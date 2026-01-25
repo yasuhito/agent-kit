@@ -31,4 +31,4 @@
     ならば メモリに task_call_id が保存される
 
   シナリオ: Task の tool_result から completion を記録する
-    ならば メモリに completion が保存される
+    ならば メモリに completion "gathered sources" が保存される

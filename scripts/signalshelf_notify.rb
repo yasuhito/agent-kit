@@ -31,6 +31,29 @@ def fetch_value(hash, *keys)
   nil
 end
 
+def retry_attempts
+  attempts = ENV.fetch('SIGNALSHELF_RETRY_ATTEMPTS', '2').to_i
+  attempts = 1 if attempts < 1
+  attempts
+end
+
+def retry_delay_seconds
+  ms = ENV.fetch('SIGNALSHELF_RETRY_DELAY_MS', '200').to_i
+  ms = 0 if ms.negative?
+  ms / 1000.0
+end
+
+def with_short_retry(attempts: retry_attempts, delay: retry_delay_seconds)
+  last = nil
+  attempts.times do |index|
+    last = yield
+    return last if last
+
+    sleep(delay) if index < attempts - 1 && delay.positive?
+  end
+  last
+end
+
 def normalize_content(value)
   return '' if value.nil?
 
@@ -455,9 +478,9 @@ def run_signalshelf_notify
   sessions_root = ENV.fetch('CODEX_SESSIONS_DIR', '~/.codex/sessions')
   sessions_root = File.expand_path(sessions_root)
   session_message = nil
-  session_path = find_session_by_id(sessions_root, thread_id)
+  session_path = with_short_retry { find_session_by_id(sessions_root, thread_id) }
   session_meta = read_session_meta(session_path)
-  session_message = extract_last_assistant_message(session_path) if session_path
+  session_message = with_short_retry { extract_last_assistant_message(session_path) } if session_path
 
   if session_message.nil?
     recent = select_recent_session_message(sessions_root, cwd)
@@ -466,11 +489,11 @@ def run_signalshelf_notify
     session_meta = read_session_meta(session_path)
   end
 
-  session_path ||= find_recent_session_by_cwd(sessions_root, cwd)
-  session_message ||= extract_last_assistant_message(session_path) if session_path
+  session_path ||= with_short_retry { find_recent_session_by_cwd(sessions_root, cwd) }
+  session_message ||= with_short_retry { extract_last_assistant_message(session_path) } if session_path
   session_meta ||= read_session_meta(session_path)
 
-  task_result = extract_task_output(session_path)
+  task_result = with_short_retry { extract_task_output(session_path) }
   task_description = task_result ? task_result[:description] : nil
   task_agent_type = task_result ? task_result[:agent_type] : nil
   task_run_in_background = task_result ? task_result[:run_in_background] : nil

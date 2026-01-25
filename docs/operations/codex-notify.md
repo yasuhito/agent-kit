@@ -23,6 +23,8 @@ notify = ["ruby", "/home/yasuhito/Work/agent-kit/scripts/signalshelf_notify.rb"]
 - `SIGNALSHELF_ROOT`: 保存先ルート（既定 `~/.agent-kit/MEMORY`）
 - `SIGNALSHELF_DEBUG`: 1 をセットするとエラーを stderr に出す
 - `CODEX_SESSIONS_DIR`: Codex のセッション JSONL ルート（既定 `~/.codex/sessions`）
+- `SIGNALSHELF_RETRY_ATTEMPTS`: transcript 探索の短リトライ回数（既定 2）
+- `SIGNALSHELF_RETRY_DELAY_MS`: リトライ間隔（ms、既定 200）
 
 ## 出力
 

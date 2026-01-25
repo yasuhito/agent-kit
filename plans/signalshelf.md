@@ -104,6 +104,7 @@ transcript_path: /path/to/transcript.jsonl
 - completion は `🗣️` / `🎯 COMPLETED` パターン優先で抽出して frontmatter に入れる。
 - Task `function_call_output` があれば **そちらを優先**して保存する。
 - Task の `description` / `subagent_type` / `call_id` を frontmatter & metadata に追加する。
+- transcript 書き込み遅延に備えて **短いリトライ**（デフォルト 2 回、200ms 間隔）を入れる。
 
 ## テスト TODO
 
