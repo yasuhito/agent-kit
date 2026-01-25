@@ -16,6 +16,55 @@
     </div>
   </header>
 
+  <section class="filters">
+    <form method="get" action="/events" class="filters-form">
+      <label>
+        <span>Event</span>
+        <select name="hook_event_type">
+          <option value="">All</option>
+          <% @filters[:hook_event_types].each do |value| %>
+            <option value="<%= value %>" <%= "selected" if params[:hook_event_type] == value %>><%= value %></option>
+          <% end %>
+        </select>
+      </label>
+      <label>
+        <span>Source</span>
+        <select name="source_app">
+          <option value="">All</option>
+          <% @filters[:source_apps].each do |value| %>
+            <option value="<%= value %>" <%= "selected" if params[:source_app] == value %>><%= value %></option>
+          <% end %>
+        </select>
+      </label>
+      <label>
+        <span>Session</span>
+        <select name="session_id">
+          <option value="">All</option>
+          <% @filters[:session_ids].each do |value| %>
+            <option value="<%= value %>" <%= "selected" if params[:session_id] == value %>><%= value %></option>
+          <% end %>
+        </select>
+      </label>
+      <label>
+        <span>Since</span>
+        <select name="since">
+          <option value="">Anytime</option>
+          <% { "60" => "Last 60 min", "360" => "Last 6 hours", "1440" => "Last 24 hours", "10080" => "Last 7 days" }.each do |value, label| %>
+            <option value="<%= value %>" <%= "selected" if params[:since] == value %>><%= label %></option>
+          <% end %>
+        </select>
+      </label>
+      <label class="filters-query">
+        <span>Search</span>
+        <input type="text" name="q" value="<%= params[:q] %>" placeholder="summary / payload / id" />
+      </label>
+      <div class="filters-actions">
+        <button type="submit">Filter</button>
+        <a class="clear" href="/events">Clear</a>
+      </div>
+    </form>
+  </section>
+
   <% if @events.empty? %>
     <div class="empty-state">
       <p>No events found.</p>
@@ -44,7 +93,7 @@
 
     const refresh = async () => {
       try {
-        const response = await fetch('/events/list');
+        const response = await fetch('/events/list' + window.location.search);
         if (!response.ok) return;
         const html = await response.text();
         container.innerHTML = html;

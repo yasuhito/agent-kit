@@ -97,6 +97,64 @@ pre {
   gap: 16px;
 }
 
+.filters {
+  margin-bottom: 20px;
+}
+
+.filters-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 16px;
+}
+
+.filters-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.filters-form select,
+.filters-form input {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 14px;
+  background: #fff;
+  color: var(--ink);
+}
+
+.filters-query {
+  grid-column: span 2;
+}
+
+.filters-actions {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.filters-actions button {
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.filters-actions .clear {
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 13px;
+}
+
 .event-card {
   background: var(--card);
   border: 1px solid var(--line);

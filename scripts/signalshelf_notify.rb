@@ -80,6 +80,29 @@ def send_notification(title, message)
   system('notify-send', title, message)
 end
 
+def truncate_text(text, max_length)
+  return '' if text.nil?
+
+  value = text.to_s.strip
+  value.length > max_length ? value[0, max_length] : value
+end
+
+def extract_last_user_message(messages)
+  return nil unless messages.is_a?(Array)
+
+  messages.reverse_each do |message|
+    next unless message.is_a?(Hash)
+
+    role = fetch_value(message, 'role', 'type')
+    next unless role.to_s == 'user'
+
+    content = fetch_value(message, 'content', 'text', 'message')
+    return extract_text_from_content(content) if content
+  end
+
+  nil
+end
+
 def normalize_content(value)
   return '' if value.nil?
 
@@ -468,14 +491,14 @@ def ensure_unique_path(path)
   end
 end
 
-def append_observability_event(event)
+def append_observability_events(events)
   root = ENV.fetch('SIGNALSHELF_ROOT', '~/.agent-kit/MEMORY')
   root = File.expand_path(root)
   state_dir = File.join(root, 'STATE')
   FileUtils.mkdir_p(state_dir)
   path = File.join(state_dir, 'observability-events.jsonl')
   File.open(path, 'a') do |file|
-    file.puts(JSON.generate(event))
+    events.each { |event| file.puts(JSON.generate(event)) }
   end
 rescue StandardError => e
   debug_log("signalshelf_notify: observability append failed: #{e.message}")
@@ -621,13 +644,75 @@ def run_signalshelf_notify
   root = ENV.fetch('SIGNALSHELF_ROOT', '~/.agent-kit/MEMORY')
   root = File.expand_path(root)
 
+  timestamp_ms = (Time.now.to_f * 1000).to_i
+  events_to_emit = []
+
+  user_message = extract_last_user_message(input_messages)
+  if user_message && !user_message.strip.empty?
+    events_to_emit << {
+      source_app: agent_source || 'codex',
+      session_id: thread_id || 'unknown',
+      hook_event_type: 'UserPromptSubmit',
+      summary: truncate_text(user_message, 100),
+      agent_name: 'user',
+      timestamp: timestamp_ms,
+      payload: {
+        prompt: truncate_text(user_message, 500)
+      }
+    }
+  end
+
+  if task_result
+    events_to_emit << {
+      source_app: agent_source || 'codex',
+      session_id: thread_id || 'unknown',
+      hook_event_type: 'PreToolUse',
+      summary: 'Task invoked',
+      agent_name: agent_type,
+      timestamp: timestamp_ms + 1,
+      payload: {
+        tool_name: 'Task',
+        tool_input: task_result[:args]
+      }
+    }
+
+    if task_result[:output]
+      events_to_emit << {
+        source_app: agent_source || 'codex',
+        session_id: thread_id || 'unknown',
+        hook_event_type: 'PostToolUse',
+        summary: 'Task result received',
+        agent_name: agent_type,
+        timestamp: timestamp_ms + 2,
+        payload: {
+          tool_name: 'Task',
+          tool_result: truncate_text(task_result[:output], 500)
+        }
+      }
+    end
+  end
+
+  if output_body && !output_body.strip.empty?
+    events_to_emit << {
+      source_app: agent_source || 'codex',
+      session_id: thread_id || 'unknown',
+      hook_event_type: 'Stop',
+      summary: truncate_text(output_body, 100),
+      agent_name: agent_type,
+      timestamp: timestamp_ms + 3,
+      payload: {
+        response: truncate_text(output_body, 500)
+      }
+    }
+  end
+
   observability_event = {
     source_app: agent_source || 'codex',
     session_id: thread_id || 'unknown',
     hook_event_type: event_type || 'agent-turn-complete',
     summary: completion,
     agent_name: agent_type,
-    timestamp: Time.now.to_i,
+    timestamp: timestamp_ms + 4,
     payload: {
       cwd: cwd,
       transcript_path: session_path,
@@ -649,7 +734,8 @@ def run_signalshelf_notify
     }
   )
 
-  append_observability_event(observability_event)
+  events_to_emit << observability_event
+  append_observability_events(events_to_emit)
 
   if task_run_in_background == true
     notify_title = 'SignalShelf background agent'

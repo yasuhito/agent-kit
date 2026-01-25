@@ -31,6 +31,7 @@ notify = ["ruby", "/home/yasuhito/Work/agent-kit/scripts/signalshelf_notify.rb"]
 
 `~/.agent-kit/MEMORY/<CATEGORY>/<YYYY-MM>/` に Markdown を保存する。
 併せて `~/.agent-kit/MEMORY/STATE/observability-events.jsonl` にイベントを追記する。
+`UserPromptSubmit` / `PreToolUse` / `PostToolUse` / `Stop` / `agent-turn-complete` を出力する。
 
 ## 取得元
 

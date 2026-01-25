@@ -51,6 +51,15 @@ Given(/^Codex セッションに Task の結果が遅れて書き込まれる:?$
   end
 end
 
+Given(/^入力メッセージがある:?$/) do |doc_string|
+  message = (doc_string || '').strip
+  raise 'input message required' if message.empty?
+
+  @input_messages = [
+    { 'role' => 'user', 'content' => message }
+  ]
+end
+
 Given('通知コマンドが設定されている') do
   ensure_tmp_root
   @notify_log = File.join(@tmp_root, 'notify.log')
@@ -79,6 +88,7 @@ When('SignalShelf notify を実行する') do
       'last-assistant-message' => 'fallback message'
     }
   }
+  payload['data']['input-messages'] = @input_messages if @input_messages
 
   script_path = File.expand_path('../../scripts/signalshelf_notify.rb', __dir__)
   env = {
@@ -174,6 +184,13 @@ Then(/^観測イベントに hook_event_type \"([^\"]+)\" が入る$/) do |expec
   end
 end
 
+Then(/^観測イベントに hook_event_type \"([^\"]+)\" が含まれる$/) do |expected|
+  events = read_all_observability_events
+  unless events.any? { |event| event['hook_event_type'] == expected }
+    raise 'observability hook_event_type missing'
+  end
+end
+
 Then('通知が送信される') do
   raise 'notify log missing' unless @notify_log && File.exist?(@notify_log)
 
@@ -189,6 +206,16 @@ def read_last_observability_event
   raise 'observability events file empty' unless last_line
 
   JSON.parse(last_line)
+end
+
+def read_all_observability_events
+  events_path = File.join(@memory_dir, 'STATE', 'observability-events.jsonl')
+  raise 'observability events file missing' unless File.exist?(events_path)
+
+  File.readlines(events_path)
+      .map(&:strip)
+      .reject(&:empty?)
+      .map { |line| JSON.parse(line) }
 end
 
 def ensure_tmp_root
