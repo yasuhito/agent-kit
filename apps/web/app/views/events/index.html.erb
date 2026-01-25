@@ -85,6 +85,7 @@
     const container = document.querySelector('[data-events-container]');
     if (!container) return;
 
+    const form = document.querySelector('.filters-form');
     const statusEl = document.querySelector('[data-events-status]');
     const updateStatus = () => {
       if (!statusEl) return;
@@ -102,6 +103,19 @@
         // ignore fetch errors
       }
     };
+
+    if (form) {
+      const selects = form.querySelectorAll('select');
+      selects.forEach((select) => {
+        select.addEventListener('change', () => {
+          if (form.requestSubmit) {
+            form.requestSubmit();
+          } else {
+            form.submit();
+          }
+        });
+      });
+    }
 
     if (window.EventSource) {
       const source = new EventSource('/events/stream');
