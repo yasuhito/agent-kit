@@ -105,6 +105,12 @@ transcript_path: /path/to/transcript.jsonl
 - Task `function_call_output` があれば **そちらを優先**して保存する。
 - Task の `description` / `subagent_type` / `call_id` を frontmatter & metadata に追加する。
 
+## テスト TODO
+
+- Cucumber の Then は 1 つの期待だけにする
+  - 例: 「ならばメモリに agent_type が保存される」
+  - completion は **別シナリオ**で検証する
+
 ## 参考
 
 - UOCS の初心者向けまとめ: `docs/operations/uocs-overview.md`
@@ -114,3 +120,8 @@ transcript_path: /path/to/transcript.jsonl
 - `MEMORY/` の保存場所（repo 内/外）
 - Hook 実装先（既存フック基盤に合わせるか、新規 CLI を追加するか）
 - 対象範囲（Task のみ / すべての出力）
+
+## TODO（未導入の依存）
+
+- Observability ダッシュボード連携（イベント送信）: 依存先が未用意のため保留
+- 通知（push/ローカル通知）: 依存先が未用意のため保留
