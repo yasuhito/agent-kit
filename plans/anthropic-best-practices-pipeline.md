@@ -83,3 +83,4 @@ skills/anthropic-best-practices-update/scripts/run_pipeline.sh --skip-translate
 - SSL 証明書エラーが出る場合: `--insecure` を使用  
   例: `skills/anthropic-best-practices-update/scripts/run_pipeline.sh --insecure`
 - tmux については `plans/tmux-memo.md` を参照
+- 定期実行は `docs/operations/systemd-timer.md` を参照

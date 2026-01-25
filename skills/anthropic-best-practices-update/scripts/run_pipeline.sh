@@ -108,37 +108,57 @@ if [ "$SKIP_TRANSLATE" -eq 1 ]; then
   exit 0
 fi
 
-# Determine input/output files for translation
+# Determine source ids for translation
 if [ -n "$SOURCE_ID" ]; then
-  INPUT_FILE="${ROOT}/data/anthropic/generated/${SOURCE_ID}.en.md"
-  OUTPUT_FILE="${ROOT}/docs/best-practices/${SOURCE_ID}.md"
-  META_FILE="${ROOT}/data/anthropic/generated/${SOURCE_ID}.meta.json"
+  IDS=("$SOURCE_ID")
 else
-  # Default to claude-code-best-practices for backward compatibility
-  INPUT_FILE="${ROOT}/data/anthropic/generated/claude-code-best-practices.en.md"
-  OUTPUT_FILE="${ROOT}/docs/best-practices/claude-code-best-practices.md"
-  META_FILE="${ROOT}/data/anthropic/generated/claude-code-best-practices.meta.json"
+  mapfile -t IDS < <(ruby -ryaml -e 'data = YAML.safe_load_file("data/anthropic/sources.yaml"); list = data.is_a?(Hash) ? data["sources"] : data; list ||= []; list.each { |s| puts s["id"] if s["enabled"] != false }')
 fi
 
 echo "=== Translating to Japanese ==="
+if [ -n "${OPENAI_API_KEY:-}" ]; then
+  echo "OPENAI_API_KEY detected in environment."
+  # If API key is provided via env, run directly without tmux/op.
+  for id in "${IDS[@]}"; do
+    INPUT_FILE="${ROOT}/data/anthropic/generated/${id}.en.md"
+    OUTPUT_FILE="${ROOT}/docs/best-practices/${id}.md"
+    META_FILE="${ROOT}/data/anthropic/generated/${id}.meta.json"
+    run skills/md-translator/scripts/openai_translate_markdown.rb \
+      --input "$INPUT_FILE" \
+      --output "$OUTPUT_FILE" \
+      --meta "$META_FILE" \
+      $INSECURE_FLAG
+  done
+  exit 0
+fi
+
+# No API key in env: require op (tmux guard).
+echo "OPENAI_API_KEY not set; falling back to op."
 if [ -n "${TMUX:-}" ]; then
-run skills/md-translator/scripts/openai_translate_markdown.rb \
-    --use-1password \
-    --input "$INPUT_FILE" \
-    --output "$OUTPUT_FILE" \
-    --meta "$META_FILE" \
-    $INSECURE_FLAG
+  for id in "${IDS[@]}"; do
+    INPUT_FILE="${ROOT}/data/anthropic/generated/${id}.en.md"
+    OUTPUT_FILE="${ROOT}/docs/best-practices/${id}.md"
+    META_FILE="${ROOT}/data/anthropic/generated/${id}.meta.json"
+    run skills/md-translator/scripts/openai_translate_markdown.rb \
+      --use-1password \
+      --input "$INPUT_FILE" \
+      --output "$OUTPUT_FILE" \
+      --meta "$META_FILE" \
+      $INSECURE_FLAG
+  done
   exit 0
 fi
 
 SESSION_NAME="${SESSION_PREFIX}-$$"
 WAIT_NAME="${SESSION_PREFIX}-wait-$$"
 STATUS_FILE="$(mktemp /tmp/abp-translate-status.XXXXXX)"
+IDS_FILE="$(mktemp /tmp/abp-translate-ids.XXXXXX)"
+printf "%s\n" "${IDS[@]}" > "${IDS_FILE}"
 
 echo "TMUX not detected. Running translation in temporary tmux session: ${SESSION_NAME}"
 echo "If it hangs (1Password sign-in), attach with: tmux attach -t ${SESSION_NAME}"
 
-tmux new-session -d -s "${SESSION_NAME}" "cd \"${ROOT}\" && skills/md-translator/scripts/openai_translate_markdown.rb --use-1password --input \"${INPUT_FILE}\" --output \"${OUTPUT_FILE}\" --meta \"${META_FILE}\" ${INSECURE_FLAG}; echo \$? > \"${STATUS_FILE}\"; tmux wait-for -S \"${WAIT_NAME}\""
+tmux new-session -d -s "${SESSION_NAME}" "cd \"${ROOT}\" && while IFS= read -r id; do INPUT_FILE=\"${ROOT}/data/anthropic/generated/\\${id}.en.md\"; OUTPUT_FILE=\"${ROOT}/docs/best-practices/\\${id}.md\"; META_FILE=\"${ROOT}/data/anthropic/generated/\\${id}.meta.json\"; skills/md-translator/scripts/openai_translate_markdown.rb --use-1password --input \"\\${INPUT_FILE}\" --output \"\\${OUTPUT_FILE}\" --meta \"\\${META_FILE}\" ${INSECURE_FLAG} || exit 1; done < \"${IDS_FILE}\"; echo \$? > \"${STATUS_FILE}\"; rm -f \"${IDS_FILE}\"; tmux wait-for -S \"${WAIT_NAME}\""
 tmux wait-for "${WAIT_NAME}"
 
 TRANSLATE_STATUS="1"

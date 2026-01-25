@@ -17,3 +17,7 @@ AI エージェント用のスクリプト・スキル・ガードレール集�
 ```markdown
 READ ~/Work/agent-kit/AGENTS.MD BEFORE ANYTHING (skip if missing).
 ```
+
+## 運用メモ
+
+- 定期実行（systemd timer）: `docs/operations/systemd-timer.md`

@@ -42,7 +42,7 @@ skills/anthropic-best-practices-update/scripts/run_pipeline.sh --skip-translate
 - `data/anthropic/normalized/`
 - `data/anthropic/sections/`
 - `data/anthropic/generated/claude-md.en.md`
-- `docs/best-practices/claude-md.md`
+- `docs/best-practices/<source-id>.md`
 
 ## Options
 
@@ -50,5 +50,6 @@ skills/anthropic-best-practices-update/scripts/run_pipeline.sh --skip-translate
 
 ## Notes
 
-- Translation uses tmux + 1Password (`op`) to read `OPENAI_API_KEY`.
-- If translation stalls, attach to the temporary session printed by the script.
+- `OPENAI_API_KEY` が env にある場合は **tmux なしで直接翻訳**する。
+- env が無い場合は tmux + 1Password (`op`) を使う。
+- tmux 翻訳が止まったら、出力されたセッションに attach する。
