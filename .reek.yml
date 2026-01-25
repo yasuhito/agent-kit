@@ -17,6 +17,12 @@ detectors:
   # These thresholds are reasonable for scripts
   TooManyStatements:
     max_statements: 15
+    exclude:
+      - 'extract_completion_message'
+      - 'extract_task_output'
+      - 'extract_text_from_output'
+      - 'run_signalshelf_notify'
+      - 'select_recent_session_message'
 
   LongParameterList:
     max_params: 5
