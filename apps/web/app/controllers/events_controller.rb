@@ -33,7 +33,6 @@ class EventsController < ApplicationController
       else
         response.stream.write(": heartbeat\n\n")
       end
-      response.stream.flush if response.stream.respond_to?(:flush)
       sleep 2
     end
   rescue ActionController::Live::ClientDisconnected, IOError, Errno::EPIPE
