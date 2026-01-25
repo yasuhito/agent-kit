@@ -22,7 +22,7 @@ flowchart TD
 ## スクリプト（個別実行）
 
 1. 取得  
-   `skills/doc-fetcher/scripts/anthropic_fetch.rb --url <url> --id <id> [--url <url> --id <id> ...]`
+   `skills/doc-fetcher/scripts/doc_fetcher.rb --url <url> --id <id> [--url <url> --id <id> ...]`
 
 2. 正規化  
    `skills/md-normalizer/scripts/anthropic_normalize.rb --all`

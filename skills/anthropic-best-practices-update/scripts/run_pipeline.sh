@@ -92,7 +92,7 @@ if [ "$INSECURE" -eq 1 ]; then
 fi
 
 echo "=== Fetching sources ==="
-run skills/doc-fetcher/scripts/anthropic_fetch.rb $SOURCE_SELECTOR $INSECURE_FLAG
+run skills/doc-fetcher/scripts/doc_fetcher.rb $SOURCE_SELECTOR $INSECURE_FLAG
 
 echo "=== Normalizing sources ==="
 run skills/md-normalizer/scripts/anthropic_normalize.rb $SOURCE_SELECTOR

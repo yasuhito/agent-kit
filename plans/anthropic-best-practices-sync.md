@@ -19,7 +19,7 @@
 - ランタイム: Ruby
 - 作成: docs/best-practices/ ディレクトリ
 - 方針: AIが骨子を作らない。まずは Anthropic 公式 docs を決定論的に取得するための取得ツールを作る。
-- 取得ツール作成: skills/doc-fetcher/scripts/anthropic_fetch.rb（正本）
+- 取得ツール作成: skills/doc-fetcher/scripts/doc_fetcher.rb（正本）
 - データ保存先: data/anthropic/ (state.json, snapshots/)
 - メモ: add-skill CLI の利用を検討。後回し。
 - 正規化: pandoc を使用。skills/md-normalizer/scripts/anthropic_normalize.rb 追加（正本）。

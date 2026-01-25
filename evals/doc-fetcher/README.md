@@ -12,7 +12,7 @@ ruby ./evals/doc-fetcher/check.rb
 
 ## What it checks
 
-- should_trigger=1 -> at least one `anthropic_fetch.rb --list` command observed
+- should_trigger=1 -> at least one `skills/doc-fetcher/scripts/doc_fetcher.rb --list` command observed
 - should_trigger=0 -> no `--list` command observed
 - rejects `--list` combined with `--all` or `--id`
 

@@ -18,7 +18,7 @@ if header != "id\tprompt\tshould_trigger"
   warn 'Unexpected prompts.tsv header'
 end
 
-path_re = %r{(skills/doc-fetcher/scripts/anthropic_fetch\.rb|scripts/anthropic_fetch\.rb)}
+path_re = %r{skills/doc-fetcher/scripts/doc_fetcher\.rb}
 list_cmd_re = %r{#{path_re}.*\s--list(?:\s|$|'|\")}i
 
 failures = []
