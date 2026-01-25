@@ -8,7 +8,8 @@ end
 
 desc 'Run RuboCop'
 task :rubocop do
-  sh 'bundle exec rubocop', verbose: false do |ok, _res|
+  env = { 'XDG_CACHE_HOME' => File.join(Dir.pwd, '.cache') }
+  sh env, 'bundle exec rubocop', verbose: false do |ok, _res|
     puts ok ? 'RuboCop: PASS' : 'RuboCop: FAIL (see above for details)'
   end
 end
@@ -41,7 +42,8 @@ task :quality do
   puts '=' * 60
   puts 'Running RuboCop...'
   puts '=' * 60
-  results[:rubocop] = system('bundle exec rubocop')
+  env = { 'XDG_CACHE_HOME' => File.join(Dir.pwd, '.cache') }
+  results[:rubocop] = system(env, 'bundle exec rubocop')
 
   puts
   puts '=' * 60
