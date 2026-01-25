@@ -13,20 +13,21 @@ Split normalized Markdown into H2 sections while preserving code fences and outp
 
 ```bash
 # list sources and their last normalized path
-skills/md-section-splitter/scripts/anthropic_split_sections.rb --list
+skills/md-section-splitter/scripts/anthropic_split_sections.rb list
 
 # split all sources in state.json
-skills/md-section-splitter/scripts/anthropic_split_sections.rb --all
+skills/md-section-splitter/scripts/anthropic_split_sections.rb split --all
 
 # split a single source by id
-skills/md-section-splitter/scripts/anthropic_split_sections.rb --id best-practices
+skills/md-section-splitter/scripts/anthropic_split_sections.rb split --id best-practices
 ```
 
 ## Inputs
 
 - `data/doc-fetcher/state.json` (last normalized path per source)
 - Normalized Markdown under `data/doc-fetcher/normalized/<id>/`
-- Optional CLI flags: `--all`, `--id`, `--force`, `--dry-run`, `--list`
+- Subcommands: `list`, `split`
+- Optional flags for `split`: `--all`, `--id`, `--force`, `--dry-run`
 
 ## Outputs
 
@@ -37,14 +38,14 @@ skills/md-section-splitter/scripts/anthropic_split_sections.rb --id best-practic
 ## Workflow
 
 1. Ensure normalization has run (md-normalizer).
-2. Run the splitter with `--all` or `--id`.
+2. Run the splitter with `split --all` or `split --id`.
 3. Confirm section files and `index.json` exist.
 
 ## Options
 
-- `--force`: Overwrite existing section output.
-- `--dry-run`: Do not write files.
-- `--list`: Print sources and last normalized path (from state.json).
+- `list`: Print sources and last normalized path (from state.json).
+- `split --force`: Overwrite existing section output.
+- `split --dry-run`: Do not write files.
 
 ## Notes
 

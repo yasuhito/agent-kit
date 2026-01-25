@@ -9,13 +9,17 @@ description: Deterministically fetch documentation from one or more URLs using s
 
 Fetch documentation from URLs and store immutable snapshots plus fetch state. Uses conditional requests (ETag/If-Modified-Since) for deterministic change tracking.
 
+## CLI Shape
+
+- Subcommand-based: `list` or `fetch` only.
+- If unsure, run `skills/doc-fetcher/scripts/doc_fetcher.rb --help` first.
+
 ## Intent → Command
 
 - "登録済み/追跡中の URL 一覧がほしい" -> `list`
 - "この URL を取得してほしい" -> `fetch --url <url>`
 - URL が無い場合は質問してから `fetch`
 - 書き込み不要と言われたら `fetch --dry-run`
-- 旧フラグ `--list` / `--id` / `--all` は削除済み（使わない）
 
 ## Quick Start
 

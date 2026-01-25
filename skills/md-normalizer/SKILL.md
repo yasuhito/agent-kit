@@ -13,20 +13,21 @@ Normalize snapshot content (Markdown or HTML) into stable GitHub-flavored Markdo
 
 ```bash
 # list sources and their last snapshot path
-skills/md-normalizer/scripts/anthropic_normalize.rb --list
+skills/md-normalizer/scripts/anthropic_normalize.rb list
 
 # normalize all sources in state.json
-skills/md-normalizer/scripts/anthropic_normalize.rb --all
+skills/md-normalizer/scripts/anthropic_normalize.rb normalize --all
 
 # normalize a single source by id
-skills/md-normalizer/scripts/anthropic_normalize.rb --id best-practices
+skills/md-normalizer/scripts/anthropic_normalize.rb normalize --id best-practices
 ```
 
 ## Inputs
 
 - `data/doc-fetcher/state.json` (last snapshot path per source)
 - Snapshot files under `data/doc-fetcher/snapshots/<id>/`
-- Optional CLI flags: `--all`, `--id`, `--force`, `--dry-run`, `--list`
+- Subcommands: `list`, `normalize`
+- Optional flags for `normalize`: `--all`, `--id`, `--force`, `--dry-run`
 
 ## Outputs
 
@@ -37,14 +38,14 @@ skills/md-normalizer/scripts/anthropic_normalize.rb --id best-practices
 ## Workflow
 
 1. Ensure snapshots exist (run doc-fetcher first).
-2. Run normalization with `--all` or `--id`.
+2. Run normalization with `normalize --all` or `normalize --id`.
 3. Confirm normalized output and state updates.
 
 ## Options
 
-- `--force`: Overwrite existing normalized output.
-- `--dry-run`: Do not write files.
-- `--list`: Print sources and last snapshot path (from state.json).
+- `list`: Print sources and last snapshot path (from state.json).
+- `normalize --force`: Overwrite existing normalized output.
+- `normalize --dry-run`: Do not write files.
 
 ## Notes
 

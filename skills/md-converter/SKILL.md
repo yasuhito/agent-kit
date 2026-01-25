@@ -12,15 +12,22 @@ Converts normalized markdown documents to clean output format, transforming MDX-
 ## Usage
 
 ```bash
-ruby skills/md-converter/scripts/anthropic_convert.rb [options]
+# list sources and their last normalized path
+skills/md-converter/scripts/anthropic_convert.rb list
+
+# convert all sources in state.json
+skills/md-converter/scripts/anthropic_convert.rb convert --all
+
+# convert a single source by id
+skills/md-converter/scripts/anthropic_convert.rb convert --id best-practices
 ```
 
 ## Options
 
-- `--all`: Convert all sources in state.json
-- `--id ID`: Convert a single source (repeatable)
-- `--dry-run`: Do not write files
-- `--list`: List sources and their normalized paths (from state.json)
+- `list`: List sources and their normalized paths (from state.json)
+- `convert --all`: Convert all sources in state.json
+- `convert --id ID`: Convert a single source (repeatable)
+- `convert --dry-run`: Do not write files
 
 ## Prerequisites
 

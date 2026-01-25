@@ -40,24 +40,64 @@ PANDOC_ARGS_MARKDOWN = [
   '--markdown-headings=atx'
 ].freeze
 
-OPTIONS = {
+def usage
+  basename = File.basename($PROGRAM_NAME)
+  <<~USAGE
+    Usage:
+      #{basename} list
+      #{basename} normalize --all|--id ID [--id ID ...] [--force] [--dry-run]
+
+    Commands:
+      list      Show sources and last snapshot path from state.json
+      normalize Normalize snapshots to Markdown
+
+    Examples:
+      #{basename} list
+      #{basename} normalize --all
+      #{basename} normalize --id best-practices
+  USAGE
+end
+
+subcommand = ARGV.shift
+if subcommand.nil? || %w[-h --help].include?(subcommand)
+  puts usage
+  exit 0
+end
+
+unless %w[list normalize].include?(subcommand)
+  warn usage
+  exit 1
+end
+
+options = {
   all: false,
   ids: [],
   force: false,
-  dry_run: false,
-  list: false
-}.freeze
+  dry_run: false
+}
 
-options = OPTIONS.dup
-
-OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename($PROGRAM_NAME)} [options]"
-  opts.on('--all', 'Normalize all sources in state.json') { options[:all] = true }
-  opts.on('--id ID', 'Normalize a single source id (repeatable)') { |id| options[:ids] << id }
-  opts.on('--force', 'Overwrite existing normalized output') { options[:force] = true }
-  opts.on('--dry-run', 'Do not write files') { options[:dry_run] = true }
-  opts.on('--list', 'List sources and last snapshot path') { options[:list] = true }
-end.parse!
+case subcommand
+when 'list'
+  OptionParser.new do |opts|
+    opts.banner = "Usage: #{File.basename($PROGRAM_NAME)} list"
+    opts.on('-h', '--help', 'Show this help') do
+      puts opts
+      exit 0
+    end
+  end.parse!
+when 'normalize'
+  OptionParser.new do |opts|
+    opts.banner = "Usage: #{File.basename($PROGRAM_NAME)} normalize [options]"
+    opts.on('--all', 'Normalize all sources in state.json') { options[:all] = true }
+    opts.on('--id ID', 'Normalize a single source id (repeatable)') { |id| options[:ids] << id }
+    opts.on('--force', 'Overwrite existing normalized output') { options[:force] = true }
+    opts.on('--dry-run', 'Do not write files') { options[:dry_run] = true }
+    opts.on('-h', '--help', 'Show this help') do
+      puts opts
+      exit 0
+    end
+  end.parse!
+end
 
 def load_state
   if File.exist?(STATE_FILE)
@@ -152,7 +192,7 @@ state = load_state
 state['sources'] ||= {}
 sources = state['sources']
 
-if options[:list]
+if subcommand == 'list'
   sources.keys.sort.each do |id|
     entry = sources[id] || {}
     puts "#{id}\t#{entry['last_snapshot_path'] || '(no snapshot)'}"

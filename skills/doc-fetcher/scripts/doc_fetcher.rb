@@ -35,10 +35,24 @@ def usage
     Usage:
       #{basename} list [--url URL ...]
       #{basename} fetch --url URL [--url URL ...] [--force] [--dry-run] [--insecure]
+
+    Commands:
+      list   Show tracked sources from state.json (or preview ids for URLs)
+      fetch  Fetch URL(s) and write snapshots/state
+
+    Examples:
+      #{basename} list
+      #{basename} list --url https://example.com/docs.md
+      #{basename} fetch --url https://example.com/docs.md
   USAGE
 end
 
 subcommand = ARGV.shift
+if subcommand.nil? || %w[-h --help].include?(subcommand)
+  puts usage
+  exit 0
+end
+
 unless %w[list fetch].include?(subcommand)
   warn usage
   exit 1

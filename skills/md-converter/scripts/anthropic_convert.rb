@@ -24,22 +24,62 @@ DATA_DIR = File.join(ROOT, 'data', 'doc-fetcher')
 STATE_FILE = File.join(DATA_DIR, 'state.json')
 GENERATED_DIR = File.join(DATA_DIR, 'generated')
 
-OPTIONS = {
+def usage
+  basename = File.basename($PROGRAM_NAME)
+  <<~USAGE
+    Usage:
+      #{basename} list
+      #{basename} convert --all|--id ID [--id ID ...] [--dry-run]
+
+    Commands:
+      list    Show sources and last normalized path from state.json
+      convert Convert normalized Markdown to generated output
+
+    Examples:
+      #{basename} list
+      #{basename} convert --all
+      #{basename} convert --id best-practices
+  USAGE
+end
+
+subcommand = ARGV.shift
+if subcommand.nil? || %w[-h --help].include?(subcommand)
+  puts usage
+  exit 0
+end
+
+unless %w[list convert].include?(subcommand)
+  warn usage
+  exit 1
+end
+
+options = {
   all: false,
   ids: [],
-  dry_run: false,
-  list: false
-}.freeze
+  dry_run: false
+}
 
-options = OPTIONS.dup
-
-OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename($PROGRAM_NAME)} [options]"
-  opts.on('--all', 'Convert all sources in state.json') { options[:all] = true }
-  opts.on('--id ID', 'Convert a single source id (repeatable)') { |id| options[:ids] << id }
-  opts.on('--dry-run', 'Do not write files') { options[:dry_run] = true }
-  opts.on('--list', 'List sources') { options[:list] = true }
-end.parse!
+case subcommand
+when 'list'
+  OptionParser.new do |opts|
+    opts.banner = "Usage: #{File.basename($PROGRAM_NAME)} list"
+    opts.on('-h', '--help', 'Show this help') do
+      puts opts
+      exit 0
+    end
+  end.parse!
+when 'convert'
+  OptionParser.new do |opts|
+    opts.banner = "Usage: #{File.basename($PROGRAM_NAME)} convert [options]"
+    opts.on('--all', 'Convert all sources in state.json') { options[:all] = true }
+    opts.on('--id ID', 'Convert a single source id (repeatable)') { |id| options[:ids] << id }
+    opts.on('--dry-run', 'Do not write files') { options[:dry_run] = true }
+    opts.on('-h', '--help', 'Show this help') do
+      puts opts
+      exit 0
+    end
+  end.parse!
+end
 
 def load_state
   if File.exist?(STATE_FILE)
@@ -119,7 +159,7 @@ state = load_state
 state['sources'] ||= {}
 sources = state['sources']
 
-if options[:list]
+if subcommand == 'list'
   sources.keys.sort.each do |id|
     entry = sources[id] || {}
     puts "#{id}\t#{entry['last_normalized_path'] || '(no normalized)'}"
