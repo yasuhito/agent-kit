@@ -21,7 +21,7 @@ detectors:
       - 'extract_completion_message'
       - 'extract_task_output'
       - 'extract_text_from_output'
-      - 'run_signalshelf_notify'
+      - 'run_agentmem_notify'
       - 'select_recent_session_message'
 
   LongParameterList:

@@ -1,7 +1,7 @@
 # language: ja
 
-機能: SignalShelf notify
-  SignalShelf が Task の出力から frontmatter の主要項目を抽出できること
+機能: AgentMem notify
+  AgentMem が Task の出力から frontmatter の主要項目を抽出できること
 
   背景:
     前提 Codex セッションに Task の結果がある:
@@ -10,7 +10,7 @@
       {"timestamp":"2026-01-25T00:00:01Z","type":"response_item","payload":{"type":"function_call","name":"Task","arguments":"{\"subagent_type\":\"researcher\",\"description\":\"Collect sources\",\"run_in_background\":true}","call_id":"call_task_1"}}
       {"timestamp":"2026-01-25T00:00:02Z","type":"response_item","payload":{"type":"function_call_output","call_id":"call_task_1","output":"🎯 COMPLETED: [AGENT:researcher] gathered sources"}}
       """
-    もし SignalShelf notify を実行する
+    もし AgentMem notify を実行する
 
   シナリオ: Task の tool_result から agent_type を記録する
     ならば メモリに agent_type が保存される

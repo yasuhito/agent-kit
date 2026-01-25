@@ -1,6 +1,6 @@
 # language: ja
 
-機能: SignalShelf notifications
+機能: AgentMem notifications
   バックグラウンドタスク完了時に通知できること
 
   背景:
@@ -11,7 +11,7 @@
       {"timestamp":"2026-01-25T00:00:02Z","type":"response_item","payload":{"type":"function_call_output","call_id":"call_task_1","output":"🎯 COMPLETED: [AGENT:researcher] gathered sources"}}
       """
     前提 通知コマンドが設定されている
-    もし SignalShelf notify を実行する
+    もし AgentMem notify を実行する
 
   シナリオ: バックグラウンド完了で通知が送信される
     ならば 通知が送信される

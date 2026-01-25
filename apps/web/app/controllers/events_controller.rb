@@ -30,10 +30,13 @@ class EventsController < ApplicationController
         response.stream.write("event: update\n")
         response.stream.write("data: #{payload.to_json}\n\n")
         last_marker = marker
+      else
+        response.stream.write(": heartbeat\n\n")
       end
+      response.stream.flush if response.stream.respond_to?(:flush)
       sleep 2
     end
-  rescue IOError, Errno::EPIPE
+  rescue ActionController::Live::ClientDisconnected, IOError, Errno::EPIPE
     # Client disconnected.
   ensure
     response.stream.close
@@ -71,7 +74,7 @@ class EventsController < ApplicationController
 
   def events_path
     ENV.fetch(
-      'SIGNALSHELF_EVENTS_PATH',
+      'AGENTMEM_EVENTS_PATH',
       File.expand_path('~/.agent-kit/MEMORY/STATE/observability-events.jsonl')
     )
   end

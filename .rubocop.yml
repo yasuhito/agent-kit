@@ -23,35 +23,35 @@ Style/FrozenStringLiteralComment:
 Metrics/MethodLength:
   Max: 35
   Exclude:
-    - 'scripts/signalshelf_notify.rb'
+    - 'scripts/agentmem_notify.rb'
 
 Metrics/AbcSize:
   Max: 35
   Exclude:
-    - 'scripts/signalshelf_notify.rb'
+    - 'scripts/agentmem_notify.rb'
 
 Metrics/CyclomaticComplexity:
   Max: 10
   Exclude:
-    - 'scripts/signalshelf_notify.rb'
+    - 'scripts/agentmem_notify.rb'
 
 Metrics/PerceivedComplexity:
   Max: 12
   Exclude:
-    - 'scripts/signalshelf_notify.rb'
+    - 'scripts/agentmem_notify.rb'
 
 Metrics/BlockLength:
   Exclude:
     - 'Rakefile'
-    - 'scripts/signalshelf_notify.rb'
+    - 'scripts/agentmem_notify.rb'
 
 Metrics/ParameterLists:
   Exclude:
-    - 'scripts/signalshelf_notify.rb'
+    - 'scripts/agentmem_notify.rb'
 
 Lint/DuplicateBranch:
   Exclude:
-    - 'scripts/signalshelf_notify.rb'
+    - 'scripts/agentmem_notify.rb'
 
 Rails:
   Enabled: false

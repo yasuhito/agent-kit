@@ -1,7 +1,7 @@
 # language: ja
 
-機能: SignalShelf observability (event types)
-  SignalShelf が複数のイベント種別を書き出せること
+機能: AgentMem observability (event types)
+  AgentMem が複数のイベント種別を書き出せること
 
   背景:
     前提 Codex セッションに Task の結果がある:
@@ -14,7 +14,7 @@
       """
       Find relevant sources.
       """
-    もし SignalShelf notify を実行する
+    もし AgentMem notify を実行する
 
   シナリオ: UserPromptSubmit が書き出される
     ならば 観測イベントに hook_event_type "UserPromptSubmit" が含まれる

@@ -1,4 +1,4 @@
-# SignalShelf 設計（UOCS パターン準拠）
+# AgentMem 設計（UOCS パターン準拠）
 
 ## 目的
 
@@ -83,21 +83,21 @@ transcript_path: /path/to/transcript.jsonl
 - `notify` は **JSON を 1 つの引数として渡す**（`type: agent-turn-complete`）。
 - `data` 内に `cwd`, `input-messages`, `last-assistant-message`, `thread-id`, `turn-id` が入る。
 
-> ここでは `notify.py` を SignalShelf の thin wrapper にして、JSON を保存対象に整形する。
+> ここでは `notify.py` を AgentMem の thin wrapper にして、JSON を保存対象に整形する。
 
 ## 実装方針（案）
 
-- `scripts/` に **SignalShelf hook** を追加
+- `scripts/` に **AgentMem hook** を追加
 - フック呼び出し点は **Codex notify**（`agent-turn-complete`）
 - 観測/通知は後回し（必要なら別スクリプト）
 
 ## 実装（進行中）
 
-- スクリプト: `scripts/signalshelf_notify.rb`
-- 設定例: `notify = ["ruby", "/home/yasuhito/Work/agent-kit/scripts/signalshelf_notify.rb"]`
+- スクリプト: `scripts/agentmem_notify.rb`
+- 設定例: `notify = ["ruby", "/home/yasuhito/Work/agent-kit/scripts/agentmem_notify.rb"]`
 - 環境変数:
-  - `SIGNALSHELF_ROOT`（保存先ルート、既定 `~/.agent-kit/MEMORY`）
-  - `SIGNALSHELF_DEBUG`（エラーを stderr に出す）
+  - `AGENTMEM_ROOT`（保存先ルート、既定 `~/.agent-kit/MEMORY`）
+  - `AGENTMEM_DEBUG`（エラーを stderr に出す）
   - `CODEX_SESSIONS_DIR`（セッション JSONL ルート、既定 `~/.codex/sessions`）
 - 取得元: `~/.codex/sessions/**/*.jsonl` から直近の assistant 出力を抽出
 - agent_type は役割（researcher/engineer 等）。不明な場合は `executor=agent_source` として source を残す。
@@ -130,4 +130,4 @@ transcript_path: /path/to/transcript.jsonl
 ## 実装メモ（進行中）
 
 - 観測 UI（Rails）: `apps/web` で JSONL を読み込み表示する最小ビューを用意
-  - `SIGNALSHELF_EVENTS_PATH` でイベントの JSONL パスを指定
+  - `AGENTMEM_EVENTS_PATH` でイベントの JSONL パスを指定

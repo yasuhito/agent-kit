@@ -7,7 +7,7 @@ require 'shellwords'
 require 'time'
 
 def debug_log(message)
-  return unless ENV['SIGNALSHELF_DEBUG']
+  return unless ENV['AGENTMEM_DEBUG']
 
   warn(message)
 end
@@ -21,7 +21,7 @@ end
 def parse_payload(raw)
   JSON.parse(raw)
 rescue JSON::ParserError => e
-  debug_log("signalshelf_notify: JSON parse error: #{e.message}")
+  debug_log("agentmem_notify: JSON parse error: #{e.message}")
   {}
 end
 
@@ -33,13 +33,13 @@ def fetch_value(hash, *keys)
 end
 
 def retry_attempts
-  attempts = ENV.fetch('SIGNALSHELF_RETRY_ATTEMPTS', '2').to_i
+  attempts = ENV.fetch('AGENTMEM_RETRY_ATTEMPTS', '2').to_i
   attempts = 1 if attempts < 1
   attempts
 end
 
 def retry_delay_seconds
-  ms = ENV.fetch('SIGNALSHELF_RETRY_DELAY_MS', '200').to_i
+  ms = ENV.fetch('AGENTMEM_RETRY_DELAY_MS', '200').to_i
   ms = 0 if ms.negative?
   ms / 1000.0
 end
@@ -56,7 +56,7 @@ def with_short_retry(attempts: retry_attempts, delay: retry_delay_seconds)
 end
 
 def notify_command
-  raw = ENV['SIGNALSHELF_NOTIFY_COMMAND'].to_s.strip
+  raw = ENV['AGENTMEM_NOTIFY_COMMAND'].to_s.strip
   return nil if raw.empty?
 
   Shellwords.split(raw)
@@ -492,7 +492,7 @@ def ensure_unique_path(path)
 end
 
 def append_observability_events(events)
-  root = ENV.fetch('SIGNALSHELF_ROOT', '~/.agent-kit/MEMORY')
+  root = ENV.fetch('AGENTMEM_ROOT', '~/.agent-kit/MEMORY')
   root = File.expand_path(root)
   state_dir = File.join(root, 'STATE')
   FileUtils.mkdir_p(state_dir)
@@ -501,7 +501,7 @@ def append_observability_events(events)
     events.each { |event| file.puts(JSON.generate(event)) }
   end
 rescue StandardError => e
-  debug_log("signalshelf_notify: observability append failed: #{e.message}")
+  debug_log("agentmem_notify: observability append failed: #{e.message}")
 end
 
 def write_capture(content, options)
@@ -521,7 +521,7 @@ def write_capture(content, options)
   File.write(path, content)
 end
 
-def run_signalshelf_notify
+def run_agentmem_notify
   payload = parse_payload(read_payload)
   data = fetch_value(payload, 'data') || {}
   event_type = fetch_value(payload, 'type', 'event', 'name')
@@ -607,7 +607,7 @@ def run_signalshelf_notify
     'source' => 'codex-notify'
   )
 
-  title = completion.empty? ? "#{category}: SignalShelf Capture" : "#{category}: #{completion}"
+  title = completion.empty? ? "#{category}: AgentMem Capture" : "#{category}: #{completion}"
 
   metadata_lines = []
   metadata_lines << "**Thread:** #{thread_id}" if thread_id
@@ -642,7 +642,7 @@ def run_signalshelf_notify
     metadata_lines.empty? ? '(none)' : metadata_lines.join("\n")
   ].join("\n")
 
-  root = ENV.fetch('SIGNALSHELF_ROOT', '~/.agent-kit/MEMORY')
+  root = ENV.fetch('AGENTMEM_ROOT', '~/.agent-kit/MEMORY')
   root = File.expand_path(root)
 
   timestamp_ms = (Time.now.to_f * 1000).to_i
@@ -739,14 +739,14 @@ def run_signalshelf_notify
   append_observability_events(events_to_emit)
 
   if task_run_in_background == true
-    notify_title = 'SignalShelf background agent'
+    notify_title = 'AgentMem background agent'
     notify_message = completion.empty? ? 'Background agent completed' : completion
     send_notification(notify_title, notify_message)
   end
 rescue StandardError => e
-  debug_log("signalshelf_notify: error: #{e.message}")
+  debug_log("agentmem_notify: error: #{e.message}")
 ensure
   exit 0
 end
 
-run_signalshelf_notify if __FILE__ == $PROGRAM_NAME
+run_agentmem_notify if __FILE__ == $PROGRAM_NAME

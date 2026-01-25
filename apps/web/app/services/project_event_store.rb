@@ -48,7 +48,7 @@ class ProjectEventStore
   end
 
   def projects_dir
-    env = ENV['SIGNALSHELF_PROJECTS_DIR']
+    env = ENV['AGENTMEM_PROJECTS_DIR']
     return nil if env.nil? || env.empty?
 
     File.expand_path(env)

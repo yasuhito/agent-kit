@@ -1,6 +1,6 @@
-# Codex notify と SignalShelf
+# Codex notify と AgentMem
 
-Codex の `notify` を使って、エージェントのターン完了ごとに SignalShelf を記録する。
+Codex の `notify` を使って、エージェントのターン完了ごとに AgentMem を記録する。
 
 ## 目的
 
@@ -9,23 +9,23 @@ Codex の `notify` を使って、エージェントのターン完了ごとに 
 
 ## 設定手順
 
-1) `scripts/signalshelf_notify.rb` を実行可能にする  
+1) `scripts/agentmem_notify.rb` を実行可能にする  
 2) Codex の設定ファイルに `notify` を追加する  
 
 例（`notify` の指定）:
 
 ```toml
-notify = ["ruby", "/home/yasuhito/Work/agent-kit/scripts/signalshelf_notify.rb"]
+notify = ["ruby", "/home/yasuhito/Work/agent-kit/scripts/agentmem_notify.rb"]
 ```
 
 ## 環境変数
 
-- `SIGNALSHELF_ROOT`: 保存先ルート（既定 `~/.agent-kit/MEMORY`）
-- `SIGNALSHELF_DEBUG`: 1 をセットするとエラーを stderr に出す
+- `AGENTMEM_ROOT`: 保存先ルート（既定 `~/.agent-kit/MEMORY`）
+- `AGENTMEM_DEBUG`: 1 をセットするとエラーを stderr に出す
 - `CODEX_SESSIONS_DIR`: Codex のセッション JSONL ルート（既定 `~/.codex/sessions`）
-- `SIGNALSHELF_RETRY_ATTEMPTS`: transcript 探索の短リトライ回数（既定 2）
-- `SIGNALSHELF_RETRY_DELAY_MS`: リトライ間隔（ms、既定 200）
-- `SIGNALSHELF_NOTIFY_COMMAND`: 通知コマンド（例: `notify-send` や任意スクリプト）
+- `AGENTMEM_RETRY_ATTEMPTS`: transcript 探索の短リトライ回数（既定 2）
+- `AGENTMEM_RETRY_DELAY_MS`: リトライ間隔（ms、既定 200）
+- `AGENTMEM_NOTIFY_COMMAND`: 通知コマンド（例: `notify-send` や任意スクリプト）
 
 ## 出力
 

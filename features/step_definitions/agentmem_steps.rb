@@ -12,7 +12,7 @@ def parse_session_docstring(doc_string)
 end
 
 def setup_session_dirs(payload)
-  @tmp_root = Dir.mktmpdir('signalshelf')
+  @tmp_root = Dir.mktmpdir('agentmem')
   @sessions_dir = File.join(@tmp_root, 'sessions')
   @memory_dir = File.join(@tmp_root, 'memory')
   FileUtils.mkdir_p(@sessions_dir)
@@ -69,7 +69,7 @@ Given('通知コマンドが設定されている') do
     <<~RUBY
       # frozen_string_literal: true
 
-      log = ENV.fetch('SIGNALSHELF_NOTIFY_LOG')
+      log = ENV.fetch('AGENTMEM_NOTIFY_LOG')
       File.open(log, 'a') do |file|
         file.puts(ARGV.join(' | '))
       end
@@ -79,7 +79,7 @@ Given('通知コマンドが設定されている') do
   @notify_command = "ruby #{@notify_script}"
 end
 
-When('SignalShelf notify を実行する') do
+When('AgentMem notify を実行する') do
   payload = {
     'type' => 'agent-turn-complete',
     'data' => {
@@ -90,15 +90,15 @@ When('SignalShelf notify を実行する') do
   }
   payload['data']['input-messages'] = @input_messages if @input_messages
 
-  script_path = File.expand_path('../../scripts/signalshelf_notify.rb', __dir__)
+  script_path = File.expand_path('../../scripts/agentmem_notify.rb', __dir__)
   env = {
     'CODEX_SESSIONS_DIR' => @sessions_dir,
-    'SIGNALSHELF_ROOT' => @memory_dir
+    'AGENTMEM_ROOT' => @memory_dir
   }
-  env['SIGNALSHELF_RETRY_ATTEMPTS'] = @retry_attempts.to_s if @retry_attempts
-  env['SIGNALSHELF_RETRY_DELAY_MS'] = @retry_delay_ms.to_s if @retry_delay_ms
-  env['SIGNALSHELF_NOTIFY_COMMAND'] = @notify_command if @notify_command
-  env['SIGNALSHELF_NOTIFY_LOG'] = @notify_log if @notify_log
+  env['AGENTMEM_RETRY_ATTEMPTS'] = @retry_attempts.to_s if @retry_attempts
+  env['AGENTMEM_RETRY_DELAY_MS'] = @retry_delay_ms.to_s if @retry_delay_ms
+  env['AGENTMEM_NOTIFY_COMMAND'] = @notify_command if @notify_command
+  env['AGENTMEM_NOTIFY_LOG'] = @notify_log if @notify_log
 
   ok = system(
     env,
@@ -221,7 +221,7 @@ end
 def ensure_tmp_root
   return if @tmp_root && File.directory?(@tmp_root)
 
-  @tmp_root = Dir.mktmpdir('signalshelf')
+  @tmp_root = Dir.mktmpdir('agentmem')
   @sessions_dir = File.join(@tmp_root, 'sessions')
   @memory_dir = File.join(@tmp_root, 'memory')
   FileUtils.mkdir_p(@sessions_dir)

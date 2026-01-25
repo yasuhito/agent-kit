@@ -21,11 +21,11 @@ READ ~/Work/agent-kit/AGENTS.MD BEFORE ANYTHING (skip if missing).
 ## 運用メモ
 
 - 定期実行（systemd timer）: `docs/operations/systemd-timer.md`
-- Codex notify（SignalShelf）: `docs/operations/codex-notify.md`
+- Codex notify（AgentMem）: `docs/operations/codex-notify.md`
 
-## SignalShelf とは
+## AgentMem とは
 
-SignalShelf は、UOCS（Universal Output Capture System）パターンを Codex 向けに移植した
+AgentMem は、UOCS（Universal Output Capture System）パターンを Codex 向けに移植した
 **作業成果の自動キャプチャ**仕組みです。主な特徴は次のとおりです。
 
 - **Task の最終出力を自動保存**（SubagentStop 相当のタイミング）
