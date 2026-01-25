@@ -5,7 +5,6 @@ require 'fileutils'
 require 'json'
 require 'optparse'
 require 'time'
-require 'yaml'
 
 def find_repo_root(start_dir)
   current = File.expand_path(start_dir)
@@ -23,7 +22,6 @@ end
 ROOT = find_repo_root(__dir__)
 DATA_DIR = File.join(ROOT, 'data', 'anthropic')
 STATE_FILE = File.join(DATA_DIR, 'state.json')
-SOURCES_FILE = File.join(DATA_DIR, 'sources.yaml')
 GENERATED_DIR = File.join(DATA_DIR, 'generated')
 
 OPTIONS = {
@@ -37,27 +35,11 @@ options = OPTIONS.dup
 
 OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename($PROGRAM_NAME)} [options]"
-  opts.on('--all', 'Convert all enabled sources') { options[:all] = true }
+  opts.on('--all', 'Convert all sources in state.json') { options[:all] = true }
   opts.on('--id ID', 'Convert a single source id (repeatable)') { |id| options[:ids] << id }
   opts.on('--dry-run', 'Do not write files') { options[:dry_run] = true }
   opts.on('--list', 'List sources') { options[:list] = true }
 end.parse!
-
-def load_sources
-  unless File.exist?(SOURCES_FILE)
-    warn "Missing sources file: #{SOURCES_FILE}"
-    exit 1
-  end
-
-  data = YAML.safe_load_file(SOURCES_FILE)
-  list = data.is_a?(Hash) ? data['sources'] : data
-  unless list.is_a?(Array)
-    warn 'sources.yaml must contain a top-level array or a sources: array'
-    exit 1
-  end
-
-  list
-end
 
 def load_state
   if File.exist?(STATE_FILE)
@@ -133,16 +115,13 @@ def output_filename(id)
   "#{id}.en.md"
 end
 
-sources = load_sources
 state = load_state
 state['sources'] ||= {}
+sources = state['sources']
 
 if options[:list]
-  sources.each do |source|
-    next if source['enabled'] == false
-
-    id = source['id']
-    entry = state['sources'][id] || {}
+  sources.keys.sort.each do |id|
+    entry = sources[id] || {}
     puts "#{id}\t#{entry['last_normalized_path'] || '(no normalized)'}"
   end
   exit 0
@@ -153,13 +132,13 @@ if !options[:all] && options[:ids].empty?
   exit 1
 end
 
-selected = if options[:all]
-             sources.reject { |s| s['enabled'] == false }
-           else
-             sources.select { |s| options[:ids].include?(s['id']) }
-           end
+selected_ids = if options[:all]
+                 sources.keys.sort
+               else
+                 options[:ids]
+               end
 
-if selected.empty?
+if selected_ids.empty?
   warn 'No sources selected'
   exit 1
 end
@@ -195,8 +174,7 @@ def convert_source(id, entry, dry_run)
   puts "#{id}: wrote #{output_path}"
 end
 
-selected.each do |source|
-  id = source['id']
+selected_ids.each do |id|
   entry = state['sources'][id]
 
   if entry.nil?

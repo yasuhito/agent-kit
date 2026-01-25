@@ -4,3 +4,7 @@ node_modules/
 bin/
 data/
 .cache/
+evals/doc-fetcher/runs/
+goals/
+AGENTS.md
+docs/operations/uocs-overview.md

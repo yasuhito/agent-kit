@@ -15,7 +15,7 @@ Normalize snapshot content (Markdown or HTML) into stable GitHub-flavored Markdo
 # list sources and their last snapshot path
 skills/md-normalizer/scripts/anthropic_normalize.rb --list
 
-# normalize all enabled sources
+# normalize all sources in state.json
 skills/md-normalizer/scripts/anthropic_normalize.rb --all
 
 # normalize a single source by id
@@ -44,7 +44,7 @@ skills/md-normalizer/scripts/anthropic_normalize.rb --id best-practices
 
 - `--force`: Overwrite existing normalized output.
 - `--dry-run`: Do not write files.
-- `--list`: Print sources and last snapshot path.
+- `--list`: Print sources and last snapshot path (from state.json).
 
 ## Notes
 

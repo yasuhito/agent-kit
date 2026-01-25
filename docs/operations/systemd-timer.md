@@ -5,7 +5,7 @@ Arch Linux など systemd が標準の環境では、cron よりも **systemd us
 
 ## 概要
 
-- 更新対象: `skills/anthropic-best-practices-update/scripts/run_pipeline.sh`（有効な全ソースを更新）
+- 更新対象: `skills/anthropic-best-practices-update/scripts/run_pipeline.sh`（デフォルトソースを更新）
 - 翻訳: `OPENAI_API_KEY` を環境ファイルで渡す（tmux/op なしで動作）
 - 実行: `systemd --user` の timer で週次実行
 

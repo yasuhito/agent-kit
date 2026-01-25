@@ -33,8 +33,10 @@ skills/anthropic-best-practices-update/scripts/run_pipeline.sh --skip-translate
 
 ## Inputs
 
-- `data/anthropic/sources.yaml`
 - `data/anthropic/state.json`
+-
+- The pipeline uses a built-in list of Anthropic best-practices URLs in
+  `skills/anthropic-best-practices-update/scripts/run_pipeline.sh`.
 
 ## Outputs
 
@@ -47,6 +49,7 @@ skills/anthropic-best-practices-update/scripts/run_pipeline.sh --skip-translate
 ## Options
 
 - `--skip-translate`: run everything except GPT-5 translation.
+- `--id <source-id>`: run a single source from the built-in list.
 
 ## Notes
 

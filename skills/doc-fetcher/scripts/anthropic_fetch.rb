@@ -9,7 +9,6 @@ require 'openssl'
 require 'optparse'
 require 'time'
 require 'uri'
-require 'yaml'
 
 def find_repo_root(start_dir)
   current = File.expand_path(start_dir)
@@ -26,14 +25,13 @@ end
 
 ROOT = find_repo_root(__dir__)
 DATA_DIR = File.join(ROOT, 'data', 'anthropic')
-SOURCES_FILE = File.join(DATA_DIR, 'sources.yaml')
 STATE_FILE = File.join(DATA_DIR, 'state.json')
 SNAPSHOT_DIR = File.join(DATA_DIR, 'snapshots')
 USER_AGENT = 'agent-kit-anthropic-fetcher/0.1'
 
 OPTIONS = {
-  all: false,
   ids: [],
+  urls: [],
   force: false,
   dry_run: false,
   list: false,
@@ -44,28 +42,69 @@ options = OPTIONS.dup
 
 OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename($PROGRAM_NAME)} [options]"
-  opts.on('--all', 'Fetch all enabled sources') { options[:all] = true }
-  opts.on('--id ID', 'Fetch a single source id (repeatable)') { |id| options[:ids] << id }
+  opts.on('--id ID', 'Explicit id for --url (repeatable)') { |id| options[:ids] << id }
+  opts.on('--url URL', 'Fetch a URL directly (repeatable)') { |url| options[:urls] << url }
   opts.on('--force', 'Skip conditional headers and always download') { options[:force] = true }
   opts.on('--dry-run', 'Do not write files') { options[:dry_run] = true }
-  opts.on('--list', 'List sources') { options[:list] = true }
+  opts.on('--list', 'List sources from state (or provided URLs)') { options[:list] = true }
   opts.on('--insecure', 'Skip SSL certificate verification') { options[:insecure] = true }
 end.parse!
 
-def load_sources
-  unless File.exist?(SOURCES_FILE)
-    warn "Missing sources file: #{SOURCES_FILE}"
+def parse_url(url)
+  URI(url)
+rescue URI::InvalidURIError
+  nil
+end
+
+def default_id_for(url)
+  uri = parse_url(url)
+  base = if uri
+           "#{uri.host}#{uri.path}"
+         else
+           url.to_s
+         end
+  base = base.gsub(/[^a-z0-9]+/i, '-').squeeze('-').gsub(/^-|-$/, '')
+  base = 'source' if base.empty?
+  base = "#{base}-#{Digest::SHA256.hexdigest(uri.query)[0, 8]}" if uri&.query && !uri.query.empty?
+  base
+end
+
+def ensure_unique_id(id, used_ids, url)
+  return id unless used_ids.include?(id)
+
+  suffix = Digest::SHA256.hexdigest(url.to_s)[0, 8]
+  candidate = "#{id}-#{suffix}"
+  while used_ids.include?(candidate)
+    suffix = Digest::SHA256.hexdigest("#{url}-#{candidate}")[0, 8]
+    candidate = "#{id}-#{suffix}"
+  end
+  candidate
+end
+
+def build_sources_from_urls(urls, ids)
+  if urls.empty? && ids.any?
+    warn '--id requires at least one --url'
+    exit 1
+  end
+  if ids.size > urls.size
+    warn 'Too many --id values for provided --url entries'
     exit 1
   end
 
-  data = YAML.safe_load_file(SOURCES_FILE)
-  list = data.is_a?(Hash) ? data['sources'] : data
-  unless list.is_a?(Array)
-    warn 'sources.yaml must contain a top-level array or a sources: array'
-    exit 1
+  used_ids = {}
+  sources = []
+  urls.each_with_index do |url, index|
+    parsed = parse_url(url)
+    unless parsed
+      warn "Invalid URL: #{url}"
+      next
+    end
+    id = ids[index] || default_id_for(url)
+    id = ensure_unique_id(id, used_ids, url)
+    used_ids[id] = true
+    sources << { 'id' => id, 'url' => url }
   end
-
-  list
+  sources
 end
 
 def load_state
@@ -162,27 +201,31 @@ def write_snapshot(id, url, response, body, dry_run)
   }
 end
 
-sources = load_sources
-
 if options[:list]
-  sources.each do |source|
-    next if source['enabled'] == false
+  if options[:urls].any?
+    build_sources_from_urls(options[:urls], options[:ids]).each do |source|
+      puts "#{source['id']}\t#{source['url']}"
+    end
+  else
+    state = load_state
+    sources = state.fetch('sources', {})
+    sources.keys.sort.each do |key|
+      entry = sources[key]
+      url = entry.is_a?(Hash) ? entry['url'] : nil
+      next unless url
 
-    puts "#{source['id']}\t#{source['url']}"
+      puts "#{key}\t#{url}"
+    end
   end
   exit 0
 end
 
-if !options[:all] && options[:ids].empty?
-  warn 'Specify --all or --id'
+if options[:urls].empty?
+  warn 'Specify at least one --url'
   exit 1
 end
 
-selected = if options[:all]
-             sources.reject { |s| s['enabled'] == false }
-           else
-             sources.select { |s| options[:ids].include?(s['id']) }
-           end
+selected = build_sources_from_urls(options[:urls], options[:ids])
 
 if selected.empty?
   warn 'No sources selected'

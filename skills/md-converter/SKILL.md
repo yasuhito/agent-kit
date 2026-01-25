@@ -17,10 +17,10 @@ ruby skills/md-converter/scripts/anthropic_convert.rb [options]
 
 ## Options
 
-- `--all`: Convert all enabled sources
+- `--all`: Convert all sources in state.json
 - `--id ID`: Convert a single source (repeatable)
 - `--dry-run`: Do not write files
-- `--list`: List sources and their normalized paths
+- `--list`: List sources and their normalized paths (from state.json)
 
 ## Prerequisites
 
@@ -31,7 +31,6 @@ The following must be completed before running this script:
 
 ## Inputs
 
-- `data/anthropic/sources.yaml` - Source definitions
 - `data/anthropic/state.json` - State file with source metadata
 - Normalized markdown from `data/anthropic/normalized/<source-id>/`
 

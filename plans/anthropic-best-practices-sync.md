@@ -9,18 +9,18 @@
 ## 未決
 - 自動反映の範囲（公式のみ/軽微変更のみ自動適用 vs 全てレビュー必須）。
 - 使用ランタイム（bun/node/python）。
-- 公式ドキュメントの具体URL一覧（sources.yaml など）。
+- 公式ドキュメントの具体URL一覧（run_pipeline.sh の DEFAULT_SOURCES を正本とする）。
 
 ## 追加決定
 - まずは `docs/best-practices/*.md` を新規作成し、テーマ別（例: スキルの書き方、CLAUDE.md の書き方など）に分割する。
 - 初期テーマ: CLAUDE.md の書き方。
-- 初期は sources.yaml を手作業で起こして開始し、後で公式サイトの sitemap/RSS/Changelog から新規URL候補を自動抽出する仕組みに拡張する。
+- 初期は run_pipeline.sh の DEFAULT_SOURCES を手動で更新し、後で公式サイトの sitemap/RSS/Changelog から新規URL候補を自動抽出する仕組みに拡張する。
 - 実装場所: /home/yasuhito/Work/agent-kit
 - ランタイム: Ruby
 - 作成: docs/best-practices/ ディレクトリ
 - 方針: AIが骨子を作らない。まずは Anthropic 公式 docs を決定論的に取得するための取得ツールを作る。
 - 取得ツール作成: skills/doc-fetcher/scripts/anthropic_fetch.rb（正本）
-- データ保存先: data/anthropic/ (sources.yaml, state.json, snapshots/)
+- データ保存先: data/anthropic/ (state.json, snapshots/)
 - メモ: add-skill CLI の利用を検討。後回し。
 - 正規化: pandoc を使用。skills/md-normalizer/scripts/anthropic_normalize.rb 追加（正本）。
 - 正規化MarkdownをH2単位で分割し、index.md + 連番セクション.md を生成する方針。

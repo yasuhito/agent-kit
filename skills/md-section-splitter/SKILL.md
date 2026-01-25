@@ -15,7 +15,7 @@ Split normalized Markdown into H2 sections while preserving code fences and outp
 # list sources and their last normalized path
 skills/md-section-splitter/scripts/anthropic_split_sections.rb --list
 
-# split all enabled sources
+# split all sources in state.json
 skills/md-section-splitter/scripts/anthropic_split_sections.rb --all
 
 # split a single source by id
@@ -44,7 +44,7 @@ skills/md-section-splitter/scripts/anthropic_split_sections.rb --id best-practic
 
 - `--force`: Overwrite existing section output.
 - `--dry-run`: Do not write files.
-- `--list`: Print sources and last normalized path.
+- `--list`: Print sources and last normalized path (from state.json).
 
 ## Notes
 

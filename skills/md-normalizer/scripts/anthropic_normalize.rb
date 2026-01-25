@@ -7,7 +7,6 @@ require 'json'
 require 'open3'
 require 'optparse'
 require 'time'
-require 'yaml'
 
 def find_repo_root(start_dir)
   current = File.expand_path(start_dir)
@@ -24,7 +23,6 @@ end
 
 ROOT = find_repo_root(__dir__)
 DATA_DIR = File.join(ROOT, 'data', 'anthropic')
-SOURCES_FILE = File.join(DATA_DIR, 'sources.yaml')
 STATE_FILE = File.join(DATA_DIR, 'state.json')
 NORMALIZED_DIR = File.join(DATA_DIR, 'normalized')
 
@@ -54,28 +52,12 @@ options = OPTIONS.dup
 
 OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename($PROGRAM_NAME)} [options]"
-  opts.on('--all', 'Normalize all enabled sources') { options[:all] = true }
+  opts.on('--all', 'Normalize all sources in state.json') { options[:all] = true }
   opts.on('--id ID', 'Normalize a single source id (repeatable)') { |id| options[:ids] << id }
   opts.on('--force', 'Overwrite existing normalized output') { options[:force] = true }
   opts.on('--dry-run', 'Do not write files') { options[:dry_run] = true }
   opts.on('--list', 'List sources and last snapshot path') { options[:list] = true }
 end.parse!
-
-def load_sources
-  unless File.exist?(SOURCES_FILE)
-    warn "Missing sources file: #{SOURCES_FILE}"
-    exit 1
-  end
-
-  data = YAML.safe_load_file(SOURCES_FILE)
-  list = data.is_a?(Hash) ? data['sources'] : data
-  unless list.is_a?(Array)
-    warn 'sources.yaml must contain a top-level array or a sources: array'
-    exit 1
-  end
-
-  list
-end
 
 def load_state
   if File.exist?(STATE_FILE)
@@ -166,16 +148,13 @@ def write_normalized(context, markdown, dry_run)
   }
 end
 
-sources = load_sources
 state = load_state
 state['sources'] ||= {}
+sources = state['sources']
 
 if options[:list]
-  sources.each do |source|
-    next if source['enabled'] == false
-
-    id = source['id']
-    entry = state['sources'][id] || {}
+  sources.keys.sort.each do |id|
+    entry = sources[id] || {}
     puts "#{id}\t#{entry['last_snapshot_path'] || '(no snapshot)'}"
   end
   exit 0
@@ -186,23 +165,15 @@ if !options[:all] && options[:ids].empty?
   exit 1
 end
 
-selected = if options[:all]
-             sources.reject { |s| s['enabled'] == false }
-           else
-             sources.select { |s| options[:ids].include?(s['id']) }
-           end
+selected_ids = if options[:all]
+                 sources.keys.sort
+               else
+                 options[:ids]
+               end
 
-if selected.empty?
+if selected_ids.empty?
   warn 'No sources selected'
   exit 1
-end
-
-def validate_source(source)
-  id = source['id']
-  url = source['url']
-  return nil if id.to_s.strip.empty? || url.to_s.strip.empty?
-
-  { id: id, url: url }
 end
 
 def prepare_snapshot(state_entry)
@@ -237,12 +208,11 @@ def update_state_with_result(state_entry, url, result)
   state_entry['last_normalized_at'] = result[:normalized_at]
 end
 
-def process_source(source, state, force, dry_run)
-  validated = validate_source(source)
-  return warn('Each source must include id and url') if validated.nil?
+def process_source(id, state, force, dry_run)
+  state_entry = state['sources'][id]
+  return warn("#{id}: unknown source id") if state_entry.nil?
 
-  id, url = validated.values_at(:id, :url)
-  state_entry = state['sources'][id] || { 'url' => url }
+  url = state_entry['url']
 
   snapshot = prepare_snapshot(state_entry)
   return warn("#{id}: snapshot missing") if snapshot.nil?
@@ -262,6 +232,6 @@ def process_source(source, state, force, dry_run)
   puts "#{id}: normalized"
 end
 
-selected.each { |source| process_source(source, state, options[:force], options[:dry_run]) }
+selected_ids.each { |id| process_source(id, state, options[:force], options[:dry_run]) }
 
 save_state(state, options[:dry_run])
