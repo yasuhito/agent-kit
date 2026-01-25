@@ -560,9 +560,10 @@ def run_signalshelf_notify
   task_agent_type = task_result ? task_result[:agent_type] : nil
   task_run_in_background = task_result ? task_result[:run_in_background] : nil
   task_call_id = task_result ? task_result[:call_id] : nil
+  task_output = task_result ? task_result[:output] : nil
 
-  output_body = if task_result && task_result[:output]
-                  task_result[:output].strip
+  output_body = if task_output
+                  task_output.strip
                 elsif session_message && session_message['text']
                   session_message['text'].strip
                 else
@@ -676,7 +677,7 @@ def run_signalshelf_notify
       }
     }
 
-    if task_result[:output]
+    if task_output
       events_to_emit << {
         source_app: agent_source || 'codex',
         session_id: thread_id || 'unknown',
@@ -686,7 +687,7 @@ def run_signalshelf_notify
         timestamp: timestamp_ms + 2,
         payload: {
           tool_name: 'Task',
-          tool_result: truncate_text(task_result[:output], 500)
+          tool_result: truncate_text(task_output, 500)
         }
       }
     end
