@@ -117,15 +117,43 @@
       });
     }
 
-    if (window.EventSource) {
-      const source = new EventSource('/events/stream');
-      source.addEventListener('update', () => refresh());
-      source.addEventListener('error', () => {
+    let eventSource = null;
+    let pollTimer = null;
+
+    const startPolling = () => {
+      if (pollTimer) return;
+      pollTimer = setInterval(refresh, 5000);
+    };
+
+    const startEventSource = () => {
+      eventSource = new EventSource('/events/stream');
+      eventSource.addEventListener('update', () => refresh());
+      eventSource.addEventListener('error', () => {
         updateStatus();
       });
+    };
+
+    const startLiveUpdates = () => {
+      if (window.EventSource) {
+        startEventSource();
+      } else {
+        startPolling();
+      }
+    };
+
+    const scheduleLiveUpdates = () => {
+      setTimeout(startLiveUpdates, 0);
+    };
+
+    if (document.readyState === 'complete') {
+      scheduleLiveUpdates();
     } else {
-      setInterval(refresh, 5000);
+      window.addEventListener('load', scheduleLiveUpdates, { once: true });
     }
+
+    window.addEventListener('beforeunload', () => {
+      if (eventSource) eventSource.close();
+    });
 
     const refreshIfVisible = () => {
       if (document.visibilityState === 'visible') refresh();

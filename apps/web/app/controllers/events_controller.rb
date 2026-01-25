@@ -20,6 +20,7 @@ class EventsController < ApplicationController
     response.headers['Content-Type'] = 'text/event-stream'
     response.headers['Cache-Control'] = 'no-cache'
     response.headers['X-Accel-Buffering'] = 'no'
+    response.headers['Last-Modified'] = Time.now.httpdate
 
     last_marker = nil
     loop do
