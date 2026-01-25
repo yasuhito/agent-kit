@@ -1,0 +1,13 @@
+id	prompt	should_trigger
+list-01	次のコマンドをそのまま実行して: skills/doc-fetcher/scripts/anthropic_fetch.rb --list	1
+list-02	次のコマンドをそのまま実行して: skills/doc-fetcher/scripts/anthropic_fetch.rb --list	1
+list-03	書き込み不要。次のコマンドだけ実行して一覧表示して: skills/doc-fetcher/scripts/anthropic_fetch.rb --list	1
+list-04	次のコマンドだけ実行して: skills/doc-fetcher/scripts/anthropic_fetch.rb --list	1
+list-05	state.json の sources 一覧を次のコマンドで表示して: skills/doc-fetcher/scripts/anthropic_fetch.rb --list	1
+list-06	anthropic の sources を list: skills/doc-fetcher/scripts/anthropic_fetch.rb --list	1
+no-01	README.md を要約して	0
+no-02	data/anthropic/state.json を開いて内容を教えて	0
+no-03	best-practices を取得して	0
+no-04	md-normalizer を使って文章を整形して	0
+no-05	doc-fetcher を使って --url で取得して	0
+no-06	anthropic_fetch.rb --help を表示して	0
