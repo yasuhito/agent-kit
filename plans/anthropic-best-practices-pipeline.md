@@ -58,10 +58,10 @@ skills/anthropic-best-practices-update/scripts/run_pipeline.sh --skip-translate
 
 ## 出力場所
 
-- 取得スナップショット: `data/anthropic/snapshots/`
-- 正規化: `data/anthropic/normalized/`
-- 分割: `data/anthropic/sections/`
-- 生成（英語）: `data/anthropic/generated/<source-id>.en.md`
+- 取得スナップショット: `data/doc-fetcher/snapshots/`
+- 正規化: `data/doc-fetcher/normalized/`
+- 分割: `data/doc-fetcher/sections/`
+- 生成（英語）: `data/doc-fetcher/generated/<source-id>.en.md`
 - 生成（日本語）: `docs/best-practices/<source-id>.md`
 
 ## 翻訳ルール（GPT-5）

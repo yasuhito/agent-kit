@@ -24,15 +24,15 @@ skills/md-section-splitter/scripts/anthropic_split_sections.rb --id best-practic
 
 ## Inputs
 
-- `data/anthropic/state.json` (last normalized path per source)
-- Normalized Markdown under `data/anthropic/normalized/<id>/`
+- `data/doc-fetcher/state.json` (last normalized path per source)
+- Normalized Markdown under `data/doc-fetcher/normalized/<id>/`
 - Optional CLI flags: `--all`, `--id`, `--force`, `--dry-run`, `--list`
 
 ## Outputs
 
-- Sections: `data/anthropic/sections/<id>/<snapshot_sha>/`
-- Index: `data/anthropic/sections/<id>/<snapshot_sha>/index.json`
-- State updates: `data/anthropic/state.json`
+- Sections: `data/doc-fetcher/sections/<id>/<snapshot_sha>/`
+- Index: `data/doc-fetcher/sections/<id>/<snapshot_sha>/index.json`
+- State updates: `data/doc-fetcher/state.json`
 
 ## Workflow
 

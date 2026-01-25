@@ -62,7 +62,7 @@ find_root() {
   local dir="$1"
   local i
   for i in $(seq 1 8); do
-    if [ -d "$dir/data/anthropic" ]; then
+    if [ -d "$dir/data/doc-fetcher" ]; then
       echo "$dir"
       return 0
     fi
@@ -151,9 +151,9 @@ if [ -n "${OPENAI_API_KEY:-}" ]; then
   echo "OPENAI_API_KEY detected in environment."
   # If API key is provided via env, run directly without tmux/op.
   for id in "${IDS[@]}"; do
-    INPUT_FILE="${ROOT}/data/anthropic/generated/${id}.en.md"
+    INPUT_FILE="${ROOT}/data/doc-fetcher/generated/${id}.en.md"
     OUTPUT_FILE="${ROOT}/docs/best-practices/${id}.md"
-    META_FILE="${ROOT}/data/anthropic/generated/${id}.meta.json"
+    META_FILE="${ROOT}/data/doc-fetcher/generated/${id}.meta.json"
     run skills/md-translator/scripts/openai_translate_markdown.rb \
       --input "$INPUT_FILE" \
       --output "$OUTPUT_FILE" \
@@ -167,9 +167,9 @@ fi
 echo "OPENAI_API_KEY not set; falling back to op."
 if [ -n "${TMUX:-}" ]; then
   for id in "${IDS[@]}"; do
-    INPUT_FILE="${ROOT}/data/anthropic/generated/${id}.en.md"
+    INPUT_FILE="${ROOT}/data/doc-fetcher/generated/${id}.en.md"
     OUTPUT_FILE="${ROOT}/docs/best-practices/${id}.md"
-    META_FILE="${ROOT}/data/anthropic/generated/${id}.meta.json"
+    META_FILE="${ROOT}/data/doc-fetcher/generated/${id}.meta.json"
     run skills/md-translator/scripts/openai_translate_markdown.rb \
       --use-1password \
       --input "$INPUT_FILE" \
@@ -189,7 +189,7 @@ printf "%s\n" "${IDS[@]}" > "${IDS_FILE}"
 echo "TMUX not detected. Running translation in temporary tmux session: ${SESSION_NAME}"
 echo "If it hangs (1Password sign-in), attach with: tmux attach -t ${SESSION_NAME}"
 
-tmux new-session -d -s "${SESSION_NAME}" "cd \"${ROOT}\" && while IFS= read -r id; do INPUT_FILE=\"${ROOT}/data/anthropic/generated/\\${id}.en.md\"; OUTPUT_FILE=\"${ROOT}/docs/best-practices/\\${id}.md\"; META_FILE=\"${ROOT}/data/anthropic/generated/\\${id}.meta.json\"; skills/md-translator/scripts/openai_translate_markdown.rb --use-1password --input \"\\${INPUT_FILE}\" --output \"\\${OUTPUT_FILE}\" --meta \"\\${META_FILE}\" ${INSECURE_FLAG} || exit 1; done < \"${IDS_FILE}\"; echo \$? > \"${STATUS_FILE}\"; rm -f \"${IDS_FILE}\"; tmux wait-for -S \"${WAIT_NAME}\""
+tmux new-session -d -s "${SESSION_NAME}" "cd \"${ROOT}\" && while IFS= read -r id; do INPUT_FILE=\"${ROOT}/data/doc-fetcher/generated/\\${id}.en.md\"; OUTPUT_FILE=\"${ROOT}/docs/best-practices/\\${id}.md\"; META_FILE=\"${ROOT}/data/doc-fetcher/generated/\\${id}.meta.json\"; skills/md-translator/scripts/openai_translate_markdown.rb --use-1password --input \"\\${INPUT_FILE}\" --output \"\\${OUTPUT_FILE}\" --meta \"\\${META_FILE}\" ${INSECURE_FLAG} || exit 1; done < \"${IDS_FILE}\"; echo \$? > \"${STATUS_FILE}\"; rm -f \"${IDS_FILE}\"; tmux wait-for -S \"${WAIT_NAME}\""
 tmux wait-for "${WAIT_NAME}"
 
 TRANSLATE_STATUS="1"

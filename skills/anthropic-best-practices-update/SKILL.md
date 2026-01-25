@@ -33,17 +33,17 @@ skills/anthropic-best-practices-update/scripts/run_pipeline.sh --skip-translate
 
 ## Inputs
 
-- `data/anthropic/state.json`
+- `data/doc-fetcher/state.json`
 - The pipeline uses a built-in list of Anthropic best-practices URLs in
   `skills/anthropic-best-practices-update/scripts/run_pipeline.sh`.
   Source ids are derived from URLs.
 
 ## Outputs
 
-- `data/anthropic/snapshots/`
-- `data/anthropic/normalized/`
-- `data/anthropic/sections/`
-- `data/anthropic/generated/claude-md.en.md`
+- `data/doc-fetcher/snapshots/`
+- `data/doc-fetcher/normalized/`
+- `data/doc-fetcher/sections/`
+- `data/doc-fetcher/generated/claude-md.en.md`
 - `docs/best-practices/<source-id>.md`
 
 ## Options

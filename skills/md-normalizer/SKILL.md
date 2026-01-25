@@ -24,15 +24,15 @@ skills/md-normalizer/scripts/anthropic_normalize.rb --id best-practices
 
 ## Inputs
 
-- `data/anthropic/state.json` (last snapshot path per source)
-- Snapshot files under `data/anthropic/snapshots/<id>/`
+- `data/doc-fetcher/state.json` (last snapshot path per source)
+- Snapshot files under `data/doc-fetcher/snapshots/<id>/`
 - Optional CLI flags: `--all`, `--id`, `--force`, `--dry-run`, `--list`
 
 ## Outputs
 
-- Normalized Markdown: `data/anthropic/normalized/<id>/<sha>.md`
-- Normalization metadata: `data/anthropic/normalized/<id>/<sha>.json`
-- State updates: `data/anthropic/state.json`
+- Normalized Markdown: `data/doc-fetcher/normalized/<id>/<sha>.md`
+- Normalization metadata: `data/doc-fetcher/normalized/<id>/<sha>.json`
+- State updates: `data/doc-fetcher/state.json`
 
 ## Workflow
 

@@ -12,7 +12,7 @@ require 'time'
 def find_repo_root(start_dir)
   current = File.expand_path(start_dir)
   8.times do
-    return current if File.directory?(File.join(current, 'data', 'anthropic'))
+    return current if File.directory?(File.join(current, 'skills'))
 
     parent = File.dirname(current)
     break if parent == current
@@ -23,9 +23,9 @@ def find_repo_root(start_dir)
 end
 
 ROOT = find_repo_root(__dir__)
-DEFAULT_INPUT = File.join(ROOT, 'data', 'anthropic', 'generated', 'claude-md.en.md')
+DEFAULT_INPUT = File.join(ROOT, 'data', 'doc-fetcher', 'generated', 'claude-md.en.md')
 DEFAULT_OUTPUT = File.join(ROOT, 'docs', 'best-practices', 'claude-md.md')
-DEFAULT_META = File.join(ROOT, 'data', 'anthropic', 'generated', 'claude-md.ja.json')
+DEFAULT_META = File.join(ROOT, 'data', 'doc-fetcher', 'generated', 'claude-md.ja.json')
 
 options = {
   input: DEFAULT_INPUT,

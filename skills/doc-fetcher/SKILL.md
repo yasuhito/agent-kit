@@ -29,9 +29,9 @@ skills/doc-fetcher/scripts/doc_fetcher.rb --url https://example.com/docs.md
 
 ## Outputs
 
-- Snapshots: `data/anthropic/snapshots/<id>/<sha256>.md|.html`
-- Snapshot metadata: `data/anthropic/snapshots/<id>/<sha256>.json`
-- State file: `data/anthropic/state.json`
+- Snapshots: `data/doc-fetcher/snapshots/<id>/<sha256>.md|.html`
+- Snapshot metadata: `data/doc-fetcher/snapshots/<id>/<sha256>.json`
+- State file: `data/doc-fetcher/state.json`
 
 ## Workflow
 
@@ -43,10 +43,10 @@ skills/doc-fetcher/scripts/doc_fetcher.rb --url https://example.com/docs.md
 
 - `--force`: Skip conditional headers and always download.
 - `--dry-run`: Do not write files.
-- `--list`: Print sources tracked in `data/anthropic/state.json` (or provided URLs).
+- `--list`: Print sources tracked in `data/doc-fetcher/state.json` (or provided URLs).
 
 ## Notes
 
 - Prefer `.md` endpoints when available to avoid HTML normalization.
 - IDs are derived from URLs. Use `--list --url <url>` to preview the generated id.
-- The data root is fixed to `data/anthropic/`. For other pipelines, copy the script and update `DATA_DIR`.
+- The data root is fixed to `data/doc-fetcher/`. For other pipelines, copy the script and update `DATA_DIR`.

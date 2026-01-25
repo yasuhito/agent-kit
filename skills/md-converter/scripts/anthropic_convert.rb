@@ -9,7 +9,7 @@ require 'time'
 def find_repo_root(start_dir)
   current = File.expand_path(start_dir)
   8.times do
-    return current if File.directory?(File.join(current, 'data', 'anthropic'))
+    return current if File.directory?(File.join(current, 'skills'))
 
     parent = File.dirname(current)
     break if parent == current
@@ -20,7 +20,7 @@ def find_repo_root(start_dir)
 end
 
 ROOT = find_repo_root(__dir__)
-DATA_DIR = File.join(ROOT, 'data', 'anthropic')
+DATA_DIR = File.join(ROOT, 'data', 'doc-fetcher')
 STATE_FILE = File.join(DATA_DIR, 'state.json')
 GENERATED_DIR = File.join(DATA_DIR, 'generated')
 

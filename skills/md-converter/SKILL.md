@@ -31,12 +31,12 @@ The following must be completed before running this script:
 
 ## Inputs
 
-- `data/anthropic/state.json` - State file with source metadata
-- Normalized markdown from `data/anthropic/normalized/<source-id>/`
+- `data/doc-fetcher/state.json` - State file with source metadata
+- Normalized markdown from `data/doc-fetcher/normalized/<source-id>/`
 
 ## Outputs
 
-- `data/anthropic/generated/<source-id>.en.md` - Converted markdown document
+- `data/doc-fetcher/generated/<source-id>.en.md` - Converted markdown document
 
 ## Content Processing
 
