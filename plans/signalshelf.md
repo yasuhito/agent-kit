@@ -125,7 +125,7 @@ transcript_path: /path/to/transcript.jsonl
 ## TODO（未導入の依存）
 
 - Observability ダッシュボード連携（イベント送信）: JSONL へ書き出しは実装、外部ダッシュボード送信は保留
-- 通知（push/ローカル通知）: 依存先が未用意のため保留
+- 通知（push/ローカル通知）: ローカル通知は実装、push/外部通知は保留
 
 ## 実装メモ（進行中）
 

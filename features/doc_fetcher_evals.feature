@@ -7,7 +7,7 @@
   シナリオ: list-01 は list を実行する
     前提 doc-fetcher eval ケース "list-01" のプロンプト:
       """
-      次のコマンドをそのまま実行して: skills/doc-fetcher/scripts/doc_fetcher.rb list
+      doc-fetcher で追跡中の URL 一覧を表示して
       """
     もし Codex でプロンプトを実行する
     ならば list コマンドが有効に実行されている
@@ -15,7 +15,7 @@
   シナリオ: list-02 は list を実行する
     前提 doc-fetcher eval ケース "list-02" のプロンプト:
       """
-      次のコマンドをそのまま実行して: skills/doc-fetcher/scripts/doc_fetcher.rb list
+      state.json の sources を一覧で見せて
       """
     もし Codex でプロンプトを実行する
     ならば list コマンドが有効に実行されている
@@ -23,7 +23,7 @@
   シナリオ: list-03 は list を実行する
     前提 doc-fetcher eval ケース "list-03" のプロンプト:
       """
-      書き込み不要。次のコマンドだけ実行して一覧表示して: skills/doc-fetcher/scripts/doc_fetcher.rb list
+      doc-fetcher の登録済みソースを一覧表示して
       """
     もし Codex でプロンプトを実行する
     ならば list コマンドが有効に実行されている
@@ -31,7 +31,7 @@
   シナリオ: list-04 は list を実行する
     前提 doc-fetcher eval ケース "list-04" のプロンプト:
       """
-      次のコマンドだけ実行して: skills/doc-fetcher/scripts/doc_fetcher.rb list
+      追跡している URL の一覧がほしい
       """
     もし Codex でプロンプトを実行する
     ならば list コマンドが有効に実行されている
@@ -39,7 +39,7 @@
   シナリオ: list-05 は list を実行する
     前提 doc-fetcher eval ケース "list-05" のプロンプト:
       """
-      state.json の sources 一覧を次のコマンドで表示して: skills/doc-fetcher/scripts/doc_fetcher.rb list
+      doc-fetcher のソース一覧を出して
       """
     もし Codex でプロンプトを実行する
     ならば list コマンドが有効に実行されている
@@ -47,7 +47,7 @@
   シナリオ: list-06 は list を実行する
     前提 doc-fetcher eval ケース "list-06" のプロンプト:
       """
-      anthropic の sources を list: skills/doc-fetcher/scripts/doc_fetcher.rb list
+      doc-fetcher の登録済み URL を教えて
       """
     もし Codex でプロンプトを実行する
     ならば list コマンドが有効に実行されている

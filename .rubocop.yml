@@ -1,5 +1,6 @@
 plugins:
   - rubocop-performance
+  - rubocop-rails
 
 AllCops:
   TargetRubyVersion: 3.4
@@ -51,3 +52,6 @@ Metrics/ParameterLists:
 Lint/DuplicateBranch:
   Exclude:
     - 'scripts/signalshelf_notify.rb'
+
+Rails:
+  Enabled: false

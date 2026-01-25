@@ -25,6 +25,7 @@ notify = ["ruby", "/home/yasuhito/Work/agent-kit/scripts/signalshelf_notify.rb"]
 - `CODEX_SESSIONS_DIR`: Codex のセッション JSONL ルート（既定 `~/.codex/sessions`）
 - `SIGNALSHELF_RETRY_ATTEMPTS`: transcript 探索の短リトライ回数（既定 2）
 - `SIGNALSHELF_RETRY_DELAY_MS`: リトライ間隔（ms、既定 200）
+- `SIGNALSHELF_NOTIFY_COMMAND`: 通知コマンド（例: `notify-send` や任意スクリプト）
 
 ## 出力
 

@@ -1,6 +1,6 @@
 # doc-fetcher evals（list のみ）
 
-`skills/doc-fetcher` に対する Cucumber ベースの eval です。state のソース一覧を求められたときに
+`skills/doc-fetcher` に対する Cucumber ベースの eval です。自然文で一覧を求められたときに
 エージェントが `list` を実行するかどうか、および無関係なプロンプトで実行しないことを検証します。
 
 ## 実行

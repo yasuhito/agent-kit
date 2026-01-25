@@ -51,6 +51,25 @@ Given(/^Codex セッションに Task の結果が遅れて書き込まれる:?$
   end
 end
 
+Given('通知コマンドが設定されている') do
+  ensure_tmp_root
+  @notify_log = File.join(@tmp_root, 'notify.log')
+  @notify_script = File.join(@tmp_root, 'notify_stub.rb')
+  File.write(
+    @notify_script,
+    <<~RUBY
+      # frozen_string_literal: true
+
+      log = ENV.fetch('SIGNALSHELF_NOTIFY_LOG')
+      File.open(log, 'a') do |file|
+        file.puts(ARGV.join(' | '))
+      end
+    RUBY
+  )
+  FileUtils.chmod('+x', @notify_script)
+  @notify_command = "ruby #{@notify_script}"
+end
+
 When('SignalShelf notify を実行する') do
   payload = {
     'type' => 'agent-turn-complete',
@@ -68,6 +87,8 @@ When('SignalShelf notify を実行する') do
   }
   env['SIGNALSHELF_RETRY_ATTEMPTS'] = @retry_attempts.to_s if @retry_attempts
   env['SIGNALSHELF_RETRY_DELAY_MS'] = @retry_delay_ms.to_s if @retry_delay_ms
+  env['SIGNALSHELF_NOTIFY_COMMAND'] = @notify_command if @notify_command
+  env['SIGNALSHELF_NOTIFY_LOG'] = @notify_log if @notify_log
 
   ok = system(
     env,
@@ -153,6 +174,13 @@ Then(/^観測イベントに hook_event_type \"([^\"]+)\" が入る$/) do |expec
   end
 end
 
+Then('通知が送信される') do
+  raise 'notify log missing' unless @notify_log && File.exist?(@notify_log)
+
+  contents = File.read(@notify_log).strip
+  raise 'notify log empty' if contents.empty?
+end
+
 def read_last_observability_event
   events_path = File.join(@memory_dir, 'STATE', 'observability-events.jsonl')
   raise 'observability events file missing' unless File.exist?(events_path)
@@ -161,6 +189,16 @@ def read_last_observability_event
   raise 'observability events file empty' unless last_line
 
   JSON.parse(last_line)
+end
+
+def ensure_tmp_root
+  return if @tmp_root && File.directory?(@tmp_root)
+
+  @tmp_root = Dir.mktmpdir('signalshelf')
+  @sessions_dir = File.join(@tmp_root, 'sessions')
+  @memory_dir = File.join(@tmp_root, 'memory')
+  FileUtils.mkdir_p(@sessions_dir)
+  FileUtils.mkdir_p(@memory_dir)
 end
 
 After do

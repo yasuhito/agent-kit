@@ -3,6 +3,7 @@
 
 require 'json'
 require 'fileutils'
+require 'shellwords'
 require 'time'
 
 def debug_log(message)
@@ -52,6 +53,31 @@ def with_short_retry(attempts: retry_attempts, delay: retry_delay_seconds)
     sleep(delay) if index < attempts - 1 && delay.positive?
   end
   last
+end
+
+def notify_command
+  raw = ENV['SIGNALSHELF_NOTIFY_COMMAND'].to_s.strip
+  return nil if raw.empty?
+
+  Shellwords.split(raw)
+end
+
+def notify_send_available?
+  ENV.fetch('PATH', '').split(File::PATH_SEPARATOR).any? do |dir|
+    File.executable?(File.join(dir, 'notify-send'))
+  end
+end
+
+def send_notification(title, message)
+  cmd = notify_command
+  if cmd
+    system(*cmd, title, message)
+    return
+  end
+
+  return unless notify_send_available?
+
+  system('notify-send', title, message)
 end
 
 def normalize_content(value)
@@ -624,6 +650,12 @@ def run_signalshelf_notify
   )
 
   append_observability_event(observability_event)
+
+  if task_run_in_background == true
+    notify_title = 'SignalShelf background agent'
+    notify_message = completion.empty? ? 'Background agent completed' : completion
+    send_notification(notify_title, notify_message)
+  end
 rescue StandardError => e
   debug_log("signalshelf_notify: error: #{e.message}")
 ensure
