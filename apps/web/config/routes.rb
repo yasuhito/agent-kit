@@ -12,4 +12,6 @@ Rails.application.routes.draw do
   # Defines the root path route ("/")
   root "events#index"
   get "events" => "events#index"
+  get "events/list" => "events#list"
+  get "events/stream" => "events#stream"
 end

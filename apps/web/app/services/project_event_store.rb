@@ -11,7 +11,7 @@ class ProjectEventStore
   end
 
   def enabled?
-    File.directory?(projects_dir)
+    projects_dir && File.directory?(projects_dir)
   end
 
   def source_label
@@ -35,6 +35,10 @@ class ProjectEventStore
     @events.sort_by { |event| event.timestamp.to_i }.reverse
   end
 
+  def max_events
+    MAX_EVENTS
+  end
+
   private
 
   def initialize
@@ -45,12 +49,9 @@ class ProjectEventStore
 
   def projects_dir
     env = ENV['SIGNALSHELF_PROJECTS_DIR']
-    return File.expand_path(env) if env && !env.empty?
+    return nil if env.nil? || env.empty?
 
-    legacy = File.expand_path("~/.claude/projects/-Users-#{ENV.fetch('USER', 'user')}--claude")
-    return legacy if File.directory?(legacy)
-
-    File.expand_path('~/.claude/projects')
+    File.expand_path(env)
   end
 
   def recent_files

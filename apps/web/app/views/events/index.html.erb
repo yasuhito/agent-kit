@@ -8,7 +8,11 @@
       <div class="meta-label">Source</div>
       <div class="meta-value"><%= @source_label %></div>
       <div class="meta-label">Count</div>
-      <div class="meta-value"><%= @events.size %></div>
+      <div class="meta-value">
+        <%= @max_events && @events.size >= @max_events ? "#{@max_events}+" : @events.size %>
+      </div>
+      <div class="meta-label">Updated</div>
+      <div class="meta-value" data-events-status>--:--:--</div>
     </div>
   </header>
 
@@ -21,8 +25,43 @@
       </p>
     </div>
   <% else %>
-    <section class="events">
-      <%= render @events %>
+    <section class="events" data-events-container>
+      <%= render partial: "events/list", locals: { events: @events } %>
     </section>
   <% end %>
 </div>
+
+<script>
+  (() => {
+    const container = document.querySelector('[data-events-container]');
+    if (!container) return;
+
+    const statusEl = document.querySelector('[data-events-status]');
+    const updateStatus = () => {
+      if (!statusEl) return;
+      statusEl.textContent = new Date().toLocaleTimeString();
+    };
+
+    const refresh = async () => {
+      try {
+        const response = await fetch('/events/list');
+        if (!response.ok) return;
+        const html = await response.text();
+        container.innerHTML = html;
+        updateStatus();
+      } catch (_) {
+        // ignore fetch errors
+      }
+    };
+
+    if (window.EventSource) {
+      const source = new EventSource('/events/stream');
+      source.addEventListener('update', () => refresh());
+      source.addEventListener('error', () => {
+        updateStatus();
+      });
+    } else {
+      setInterval(refresh, 5000);
+    }
+  })();
+</script>

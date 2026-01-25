@@ -442,6 +442,19 @@ def ensure_unique_path(path)
   end
 end
 
+def append_observability_event(event)
+  root = ENV.fetch('SIGNALSHELF_ROOT', '~/.agent-kit/MEMORY')
+  root = File.expand_path(root)
+  state_dir = File.join(root, 'STATE')
+  FileUtils.mkdir_p(state_dir)
+  path = File.join(state_dir, 'observability-events.jsonl')
+  File.open(path, 'a') do |file|
+    file.puts(JSON.generate(event))
+  end
+rescue StandardError => e
+  debug_log("signalshelf_notify: observability append failed: #{e.message}")
+end
+
 def write_capture(content, options)
   root = options.fetch(:root)
   category = options.fetch(:category)
@@ -582,6 +595,23 @@ def run_signalshelf_notify
   root = ENV.fetch('SIGNALSHELF_ROOT', '~/.agent-kit/MEMORY')
   root = File.expand_path(root)
 
+  observability_event = {
+    source_app: agent_source || 'codex',
+    session_id: thread_id || 'unknown',
+    hook_event_type: event_type || 'agent-turn-complete',
+    summary: completion,
+    agent_name: agent_type,
+    timestamp: Time.now.to_i,
+    payload: {
+      cwd: cwd,
+      transcript_path: session_path,
+      task_description: task_description,
+      task_subagent_type: task_agent_type,
+      task_run_in_background: task_run_in_background,
+      task_call_id: task_call_id
+    }.compact
+  }
+
   write_capture(
     content,
     {
@@ -592,6 +622,8 @@ def run_signalshelf_notify
       description: description
     }
   )
+
+  append_observability_event(observability_event)
 rescue StandardError => e
   debug_log("signalshelf_notify: error: #{e.message}")
 ensure

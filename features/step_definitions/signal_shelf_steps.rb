@@ -131,6 +131,38 @@ Then('メモリに task_call_id が保存される') do
   end
 end
 
+Then('観測イベントが作成される') do
+  events_path = File.join(@memory_dir, 'STATE', 'observability-events.jsonl')
+  raise 'observability events file missing' unless File.exist?(events_path)
+
+  contents = File.read(events_path).strip
+  raise 'observability events file empty' if contents.empty?
+end
+
+Then(/^観測イベントに summary \"([^\"]+)\" が入る$/) do |expected|
+  event = read_last_observability_event
+  unless event['summary'] == expected
+    raise 'observability summary mismatch'
+  end
+end
+
+Then(/^観測イベントに hook_event_type \"([^\"]+)\" が入る$/) do |expected|
+  event = read_last_observability_event
+  unless event['hook_event_type'] == expected
+    raise 'observability hook_event_type mismatch'
+  end
+end
+
+def read_last_observability_event
+  events_path = File.join(@memory_dir, 'STATE', 'observability-events.jsonl')
+  raise 'observability events file missing' unless File.exist?(events_path)
+
+  last_line = File.readlines(events_path).reverse.find { |line| !line.strip.empty? }
+  raise 'observability events file empty' unless last_line
+
+  JSON.parse(last_line)
+end
+
 After do
   @writer_thread&.join
   FileUtils.rm_rf(@tmp_root) if @tmp_root && File.directory?(@tmp_root)
