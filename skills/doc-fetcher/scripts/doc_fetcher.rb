@@ -27,10 +27,9 @@ ROOT = find_repo_root(__dir__)
 DATA_DIR = File.join(ROOT, 'data', 'anthropic')
 STATE_FILE = File.join(DATA_DIR, 'state.json')
 SNAPSHOT_DIR = File.join(DATA_DIR, 'snapshots')
-USER_AGENT = 'agent-kit-anthropic-fetcher/0.1'
+USER_AGENT = 'agent-kit-doc-fetcher/0.1'
 
 OPTIONS = {
-  ids: [],
   urls: [],
   force: false,
   dry_run: false,
@@ -42,8 +41,7 @@ options = OPTIONS.dup
 
 OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename($PROGRAM_NAME)} [options]"
-  opts.on('--id ID', 'Explicit id for --url (repeatable)') { |id| options[:ids] << id }
-  opts.on('--url URL', 'Fetch a URL directly (repeatable)') { |url| options[:urls] << url }
+  opts.on('--url URL', 'Fetch a URL directly (repeatable, id derived from URL)') { |url| options[:urls] << url }
   opts.on('--force', 'Skip conditional headers and always download') { options[:force] = true }
   opts.on('--dry-run', 'Do not write files') { options[:dry_run] = true }
   opts.on('--list', 'List sources from state (or provided URLs)') { options[:list] = true }
@@ -81,25 +79,16 @@ def ensure_unique_id(id, used_ids, url)
   candidate
 end
 
-def build_sources_from_urls(urls, ids)
-  if urls.empty? && ids.any?
-    warn '--id requires at least one --url'
-    exit 1
-  end
-  if ids.size > urls.size
-    warn 'Too many --id values for provided --url entries'
-    exit 1
-  end
-
+def build_sources_from_urls(urls)
   used_ids = {}
   sources = []
-  urls.each_with_index do |url, index|
+  urls.each do |url|
     parsed = parse_url(url)
     unless parsed
       warn "Invalid URL: #{url}"
       next
     end
-    id = ids[index] || default_id_for(url)
+    id = default_id_for(url)
     id = ensure_unique_id(id, used_ids, url)
     used_ids[id] = true
     sources << { 'id' => id, 'url' => url }
@@ -203,7 +192,7 @@ end
 
 if options[:list]
   if options[:urls].any?
-    build_sources_from_urls(options[:urls], options[:ids]).each do |source|
+    build_sources_from_urls(options[:urls]).each do |source|
       puts "#{source['id']}\t#{source['url']}"
     end
   else
@@ -225,7 +214,7 @@ if options[:urls].empty?
   exit 1
 end
 
-selected = build_sources_from_urls(options[:urls], options[:ids])
+selected = build_sources_from_urls(options[:urls])
 
 if selected.empty?
   warn 'No sources selected'

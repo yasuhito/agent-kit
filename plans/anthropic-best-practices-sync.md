@@ -9,12 +9,12 @@
 ## 未決
 - 自動反映の範囲（公式のみ/軽微変更のみ自動適用 vs 全てレビュー必須）。
 - 使用ランタイム（bun/node/python）。
-- 公式ドキュメントの具体URL一覧（run_pipeline.sh の DEFAULT_SOURCES を正本とする）。
+- 公式ドキュメントの具体URL一覧（run_pipeline.sh の DEFAULT_URLS を正本とする）。
 
 ## 追加決定
 - まずは `docs/best-practices/*.md` を新規作成し、テーマ別（例: スキルの書き方、CLAUDE.md の書き方など）に分割する。
 - 初期テーマ: CLAUDE.md の書き方。
-- 初期は run_pipeline.sh の DEFAULT_SOURCES を手動で更新し、後で公式サイトの sitemap/RSS/Changelog から新規URL候補を自動抽出する仕組みに拡張する。
+- 初期は run_pipeline.sh の DEFAULT_URLS を手動で更新し、後で公式サイトの sitemap/RSS/Changelog から新規URL候補を自動抽出する仕組みに拡張する。
 - 実装場所: /home/yasuhito/Work/agent-kit
 - ランタイム: Ruby
 - 作成: docs/best-practices/ ディレクトリ

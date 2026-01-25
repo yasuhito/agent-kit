@@ -22,7 +22,8 @@ flowchart TD
 ## スクリプト（個別実行）
 
 1. 取得  
-   `skills/doc-fetcher/scripts/doc_fetcher.rb --url <url> --id <id> [--url <url> --id <id> ...]`
+   `skills/doc-fetcher/scripts/doc_fetcher.rb --url <url> [--url <url> ...]`  
+   ※ id は URL から自動生成される（`--list --url <url>` で確認可能）
 
 2. 正規化  
    `skills/md-normalizer/scripts/anthropic_normalize.rb --all`
@@ -43,10 +44,10 @@ flowchart TD
 skills/anthropic-best-practices-update/scripts/run_pipeline.sh
 ```
 
-特定ソースのみ:
+特定ソースのみ（id は URL から自動生成）:
 
 ```bash
-skills/anthropic-best-practices-update/scripts/run_pipeline.sh --id claude-prompt-best-practices
+skills/anthropic-best-practices-update/scripts/run_pipeline.sh --id <source-id>
 ```
 
 翻訳を省略:

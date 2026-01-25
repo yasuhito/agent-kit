@@ -18,14 +18,14 @@ skills/doc-fetcher/scripts/doc_fetcher.rb --list
 # fetch a single URL
 skills/doc-fetcher/scripts/doc_fetcher.rb --url https://code.claude.com/docs/en/best-practices.md
 
-# fetch with an explicit id (repeatable --url / --id)
-skills/doc-fetcher/scripts/doc_fetcher.rb --url https://example.com/docs.md --id example-docs
+# fetch a URL (id is derived from the URL)
+skills/doc-fetcher/scripts/doc_fetcher.rb --url https://example.com/docs.md
 ```
 
 ## Inputs
 
 - URLs passed via `--url` (repeatable, required unless using `--list`)
-- Optional CLI flags: `--id`, `--force`, `--dry-run`, `--list`
+- Optional CLI flags: `--force`, `--dry-run`, `--list`
 
 ## Outputs
 
@@ -44,9 +44,9 @@ skills/doc-fetcher/scripts/doc_fetcher.rb --url https://example.com/docs.md --id
 - `--force`: Skip conditional headers and always download.
 - `--dry-run`: Do not write files.
 - `--list`: Print sources tracked in `data/anthropic/state.json` (or provided URLs).
-- `--id`: Explicit id for the corresponding `--url` (repeatable, order matters).
 
 ## Notes
 
 - Prefer `.md` endpoints when available to avoid HTML normalization.
+- IDs are derived from URLs. Use `--list --url <url>` to preview the generated id.
 - The data root is fixed to `data/anthropic/`. For other pipelines, copy the script and update `DATA_DIR`.

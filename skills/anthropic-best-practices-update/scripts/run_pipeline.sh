@@ -7,6 +7,11 @@ INSECURE=0
 
 SESSION_PREFIX="abp-translate"
 
+DEFAULT_URLS=(
+  "https://code.claude.com/docs/en/best-practices.md"
+  "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-4-best-practices.md"
+)
+
 usage() {
   cat <<'USAGE'
 Usage: run_pipeline.sh [--id SOURCE_ID] [--skip-translate] [--insecure]
@@ -15,14 +20,14 @@ Runs the Anthropic Best Practices pipeline in order:
   fetch -> normalize -> split -> convert -> translate
 
 Options:
-  --id SOURCE_ID    Process a specific source (default: all enabled sources)
+  --id SOURCE_ID    Process a specific source (ids are derived from URLs)
   --skip-translate  Skip the GPT-5 translation step.
   --insecure        Skip SSL certificate verification during fetch.
   -h, --help        Show this help.
 
 Examples:
-  run_pipeline.sh --id claude-code-best-practices
-  run_pipeline.sh --id claude-prompt-best-practices --skip-translate --insecure
+  run_pipeline.sh --id <source-id>
+  run_pipeline.sh --id <source-id> --skip-translate --insecure
   run_pipeline.sh
 USAGE
 }
@@ -78,41 +83,67 @@ run() {
   "$ROOT/$@"
 }
 
-# Determine source selector
-if [ -n "$SOURCE_ID" ]; then
-  SOURCE_SELECTOR="--id $SOURCE_ID"
-else
-  SOURCE_SELECTOR="--all"
-fi
-
 # Determine insecure flag
 INSECURE_FLAG=""
 if [ "$INSECURE" -eq 1 ]; then
   INSECURE_FLAG="--insecure"
 fi
 
+URL_ARGS=()
+for url in "${DEFAULT_URLS[@]}"; do
+  URL_ARGS+=(--url "$url")
+done
+
+mapfile -t ID_LINES < <("$ROOT/skills/doc-fetcher/scripts/doc_fetcher.rb" --list "${URL_ARGS[@]}")
+
+declare -A URL_BY_ID
+IDS=()
+for line in "${ID_LINES[@]}"; do
+  IFS=$'\t' read -r id url <<<"$line"
+  [ -n "$id" ] || continue
+  [ -n "$url" ] || continue
+  URL_BY_ID["$id"]="$url"
+  IDS+=("$id")
+done
+
+if [ -n "$SOURCE_ID" ]; then
+  SOURCE_URL="${URL_BY_ID[$SOURCE_ID]:-}"
+  if [ -z "$SOURCE_URL" ]; then
+    echo "Unknown source id: $SOURCE_ID" >&2
+    echo "Known ids:" >&2
+    for id in "${IDS[@]}"; do
+      echo "  - $id" >&2
+    done
+    exit 1
+  fi
+  FETCH_URLS=("$SOURCE_URL")
+  IDS=("$SOURCE_ID")
+  SOURCE_SELECTOR=(--id "$SOURCE_ID")
+else
+  FETCH_URLS=("${DEFAULT_URLS[@]}")
+  SOURCE_SELECTOR=(--all)
+fi
+
+FETCH_ARGS=()
+for url in "${FETCH_URLS[@]}"; do
+  FETCH_ARGS+=(--url "$url")
+done
+
 echo "=== Fetching sources ==="
-run skills/doc-fetcher/scripts/doc_fetcher.rb $SOURCE_SELECTOR $INSECURE_FLAG
+run skills/doc-fetcher/scripts/doc_fetcher.rb "${FETCH_ARGS[@]}" $INSECURE_FLAG
 
 echo "=== Normalizing sources ==="
-run skills/md-normalizer/scripts/anthropic_normalize.rb $SOURCE_SELECTOR
+run skills/md-normalizer/scripts/anthropic_normalize.rb "${SOURCE_SELECTOR[@]}"
 
 echo "=== Splitting sections ==="
-run skills/md-section-splitter/scripts/anthropic_split_sections.rb $SOURCE_SELECTOR
+run skills/md-section-splitter/scripts/anthropic_split_sections.rb "${SOURCE_SELECTOR[@]}"
 
 echo "=== Converting to markdown ==="
-run skills/md-converter/scripts/anthropic_convert.rb $SOURCE_SELECTOR
+run skills/md-converter/scripts/anthropic_convert.rb "${SOURCE_SELECTOR[@]}"
 
 if [ "$SKIP_TRANSLATE" -eq 1 ]; then
   echo "Translation skipped."
   exit 0
-fi
-
-# Determine source ids for translation
-if [ -n "$SOURCE_ID" ]; then
-  IDS=("$SOURCE_ID")
-else
-  mapfile -t IDS < <(ruby -ryaml -e 'data = YAML.safe_load_file("data/anthropic/sources.yaml"); list = data.is_a?(Hash) ? data["sources"] : data; list ||= []; list.each { |s| puts s["id"] if s["enabled"] != false }')
 fi
 
 echo "=== Translating to Japanese ==="
