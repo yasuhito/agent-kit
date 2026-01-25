@@ -112,5 +112,13 @@
     } else {
       setInterval(refresh, 5000);
     }
+
+    const refreshIfVisible = () => {
+      if (document.visibilityState === 'visible') refresh();
+    };
+
+    document.addEventListener('visibilitychange', refreshIfVisible);
+    window.addEventListener('focus', () => refresh());
+    window.addEventListener('pageshow', () => refresh());
   })();
 </script>
