@@ -74,4 +74,16 @@ task :quality do
   exit 1 unless results.values.all?
 end
 
+desc 'Run Cucumber features'
+task :cucumber do
+  sh 'bundle exec cucumber', verbose: false do |ok, _res|
+    puts ok ? 'Cucumber: PASS' : 'Cucumber: FAIL (see above for details)'
+  end
+end
+
+desc 'Run all tests'
+task :test do
+  Rake::Task['cucumber'].invoke
+end
+
 task default: :quality
