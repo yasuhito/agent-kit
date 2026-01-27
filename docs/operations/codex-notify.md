@@ -40,6 +40,20 @@ notify = ["ruby", "/home/yasuhito/Work/agent-kit/scripts/agentmem_notify.rb"]
 - `Task` の `function_call_output` がある場合は **そちらを優先**して保存する。
   併せて `task_description` / `task_subagent_type` / `task_call_id` などを frontmatter に記録する。
 
+## Claude の hook 連携
+
+Claude の SubagentStop では `transcript_path` / `session_id` が渡るため、
+AgentMem はその JSONL を直接読み取る。
+
+例（payload）:
+
+```json
+{
+  "transcript_path": "/home/yasuhito/.claude/projects/.../agent-123.jsonl",
+  "session_id": "session-123"
+}
+```
+
 ## agent_type の扱い
 
 - UOCS では **agent_type = 役割**（researcher/engineer など）。

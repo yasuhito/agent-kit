@@ -32,3 +32,12 @@
 
   シナリオ: Task の tool_result から completion を記録する
     ならば メモリに completion "gathered sources" が保存される
+
+  シナリオ: Claude transcript の Task 結果から completion を記録する
+    前提 Claude セッションに Task の結果がある:
+      """
+      {"type":"assistant","message":{"content":[{"type":"tool_use","id":"tool-1","name":"Task","input":{"subagent_type":"researcher","description":"Find links","run_in_background":false}}]}}
+      {"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"tool-1","content":"🎯 COMPLETED: [AGENT:researcher] summarized sources"}]}}
+      """
+    もし AgentMem notify を実行する
+    ならば メモリに completion "summarized sources" が保存される

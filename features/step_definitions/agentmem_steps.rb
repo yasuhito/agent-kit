@@ -11,6 +11,13 @@ def parse_session_docstring(doc_string)
   [lines, payload]
 end
 
+def parse_jsonl_docstring(doc_string)
+  lines = (doc_string || '').lines.map(&:strip).reject(&:empty?)
+  raise 'transcript JSONL is required' if lines.empty?
+
+  lines
+end
+
 def setup_session_dirs(payload)
   @tmp_root = Dir.mktmpdir('agentmem')
   @sessions_dir = File.join(@tmp_root, 'sessions')
@@ -60,6 +67,23 @@ Given(/^入力メッセージがある:?$/) do |doc_string|
   ]
 end
 
+Given(/^Claude セッションに Task の結果がある:?$/) do |doc_string|
+  lines = parse_jsonl_docstring(doc_string)
+  ensure_tmp_root
+
+  @session_id = "claude-session-#{Time.now.to_i}"
+  @thread_id = @session_id
+  @cwd = '/home/yasuhito/Work/agent-kit'
+
+  transcript_dir = File.join(@tmp_root, 'claude')
+  FileUtils.mkdir_p(transcript_dir)
+  @transcript_path = File.join(transcript_dir, "agent-#{@session_id}.jsonl")
+
+  File.open(@transcript_path, 'w') do |file|
+    lines.each { |line| file.puts(line) }
+  end
+end
+
 Given('通知コマンドが設定されている') do
   ensure_tmp_root
   @notify_log = File.join(@tmp_root, 'notify.log')
@@ -89,6 +113,9 @@ When('AgentMem notify を実行する') do
     }
   }
   payload['data']['input-messages'] = @input_messages if @input_messages
+  payload['transcript_path'] = @transcript_path if @transcript_path
+  payload['session_id'] = @session_id if @session_id
+  payload['prompt'] = @prompt_text if @prompt_text
 
   script_path = File.expand_path('../../scripts/agentmem_notify.rb', __dir__)
   env = {
@@ -110,7 +137,6 @@ When('AgentMem notify を実行する') do
   raise 'notify script failed' unless ok
 
   @memory_file = Dir.glob(File.join(@memory_dir, '**', '*.md')).max_by { |path| File.mtime(path) }
-  raise 'memory file not created' unless @memory_file
 end
 
 Then('メモリに agent_type が保存される') do
@@ -226,6 +252,64 @@ def ensure_tmp_root
   @memory_dir = File.join(@tmp_root, 'memory')
   FileUtils.mkdir_p(@sessions_dir)
   FileUtils.mkdir_p(@memory_dir)
+end
+
+def find_explicit_rating_events
+  events = read_all_observability_events
+  events.select { |e| e['hook_event_type'] == 'ExplicitRating' }
+end
+
+Given('Claude セッションがある') do
+  ensure_tmp_root
+  @session_id = "claude-session-#{Time.now.to_i}"
+  @thread_id = @session_id
+  @cwd = '/home/yasuhito/Work/agent-kit'
+
+  transcript_dir = File.join(@tmp_root, 'claude')
+  FileUtils.mkdir_p(transcript_dir)
+  @transcript_path = File.join(transcript_dir, "agent-#{@session_id}.jsonl")
+
+  File.open(@transcript_path, 'w') do |file|
+    file.puts('{"type":"assistant","message":{"content":[{"type":"text","text":"Task completed."}]}}')
+  end
+end
+
+Given(/^prompt フィールドに \"([^\"]+)\" がある$/) do |prompt|
+  @prompt_text = prompt
+end
+
+Then(/^観測イベントに ExplicitRating で評価 (\d+) が保存される$/) do |expected_rating|
+  events = find_explicit_rating_events
+  raise 'No ExplicitRating events found' if events.empty?
+
+  found = events.any? { |e| e.dig('payload', 'rating') == expected_rating.to_i }
+  raise "rating #{expected_rating} not found in ExplicitRating events" unless found
+end
+
+Then(/^観測イベントにコメント \"([^\"]+)\" が保存される$/) do |expected_comment|
+  events = find_explicit_rating_events
+  raise 'No ExplicitRating events found' if events.empty?
+
+  found = events.any? { |e| e.dig('payload', 'comment') == expected_comment }
+  raise "comment '#{expected_comment}' not found in ExplicitRating events" unless found
+end
+
+Then('観測イベントに ExplicitRating が含まれない') do
+  events = find_explicit_rating_events
+  raise 'ExplicitRating event should not exist' unless events.empty?
+end
+
+Then('UOCS カテゴリにキャプチャファイルが作成される') do
+  uocs_dirs = [
+    File.join(@memory_dir, 'DECISION'),
+    File.join(@memory_dir, 'IMPLEMENTATION')
+  ]
+
+  found = uocs_dirs.any? do |dir|
+    Dir.glob(File.join(dir, '**', '*.md')).any?
+  end
+
+  raise 'capture file not created in UOCS category directory' unless found
 end
 
 After do

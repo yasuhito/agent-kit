@@ -1,7 +1,7 @@
 <article class="event-card">
   <header class="event-header">
     <div class="event-badges">
-      <span class="badge badge-type"><%= event.hook_event_type.presence || 'unknown' %></span>
+      <span class="badge badge-type <%= event.type_badge_class %>"><%= event.hook_event_type.presence || 'unknown' %></span>
       <% if event.agent_name.present? %>
         <span class="badge badge-agent"><%= event.agent_name %></span>
       <% end %>
@@ -9,8 +9,20 @@
     <time class="event-time"><%= event.timestamp_label %></time>
   </header>
 
-  <div class="event-summary">
-    <%= event.summary.presence || '(no summary)' %>
+  <div class="event-summary" data-summary>
+    <div class="event-summary-markdown" data-summary-content>
+      <%= event.summary.present? ? render_markdown_preview(event.summary) : '(no summary)' %>
+    </div>
+    <button
+      type="button"
+      class="summary-toggle"
+      data-summary-toggle
+      data-summary-more="See all"
+      data-summary-less="Show less"
+      aria-expanded="false"
+    >
+      See all
+    </button>
   </div>
 
   <dl class="event-meta">

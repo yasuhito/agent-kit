@@ -42,6 +42,19 @@ class Event
     Time.at(timestamp).strftime('%Y-%m-%d %H:%M:%S')
   end
 
+  def type_badge_class
+    case hook_event_type_key
+    when 'stop'
+      'badge-type-stop'
+    when 'agent-turn-complete'
+      'badge-type-agent-turn-complete'
+    when 'error'
+      'badge-type-error'
+    else
+      ''
+    end
+  end
+
   def to_partial_path
     'events/event'
   end
@@ -67,5 +80,9 @@ class Event
     Time.parse(value.to_s).to_i
   rescue ArgumentError, TypeError
     nil
+  end
+
+  def hook_event_type_key
+    hook_event_type.to_s.strip.downcase.tr('_', '-')
   end
 end

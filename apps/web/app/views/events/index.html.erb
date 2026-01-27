@@ -92,12 +92,48 @@
       statusEl.textContent = new Date().toLocaleTimeString();
     };
 
+    const setupSummaryToggles = () => {
+      const summaries = container.querySelectorAll('[data-summary]');
+      summaries.forEach((summary) => {
+        const button = summary.querySelector('[data-summary-toggle]');
+        const content = summary.querySelector('[data-summary-content]');
+        if (!button || !content) return;
+
+        const moreText = button.dataset.summaryMore || 'See all';
+        const lessText = button.dataset.summaryLess || 'Show less';
+
+        const updateVisibility = () => {
+          const needsToggle = content.scrollHeight > content.clientHeight + 4;
+          button.style.display = needsToggle ? 'inline-flex' : 'none';
+          if (!needsToggle) {
+            summary.classList.remove('expanded');
+            button.setAttribute('aria-expanded', 'false');
+            button.textContent = moreText;
+          }
+        };
+
+        if (button.dataset.summaryInitialized !== 'true') {
+          button.dataset.summaryInitialized = 'true';
+          button.textContent = moreText;
+          button.setAttribute('aria-expanded', 'false');
+          button.addEventListener('click', () => {
+            const expanded = summary.classList.toggle('expanded');
+            button.setAttribute('aria-expanded', expanded);
+            button.textContent = expanded ? lessText : moreText;
+          });
+        }
+
+        updateVisibility();
+      });
+    };
+
     const refresh = async () => {
       try {
         const response = await fetch('/events/list' + window.location.search);
         if (!response.ok) return;
         const html = await response.text();
         container.innerHTML = html;
+        setupSummaryToggles();
         updateStatus();
       } catch (_) {
         // ignore fetch errors
@@ -154,6 +190,10 @@
     window.addEventListener('beforeunload', () => {
       if (eventSource) eventSource.close();
     });
+
+    window.addEventListener('resize', () => setupSummaryToggles());
+
+    setupSummaryToggles();
 
     const refreshIfVisible = () => {
       if (document.visibilityState === 'visible') refresh();

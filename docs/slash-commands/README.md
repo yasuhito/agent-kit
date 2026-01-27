@@ -1,18 +1,18 @@
 ---
-summary: 'スラッシュコマンド（プロンプト）のインデックスと配置場所'
+summary: 'Index of slash commands (prompts) and where they live.'
 read_when:
-  - スラッシュコマンドのドキュメントを確認・更新する時
+  - Auditing or updating slash command docs.
 ---
-# スラッシュコマンド
+# Slash Commands
 
-スラッシュコマンドは `~/.codex/prompts/`（グローバル）と、存在する場合はリポジトリローカルフォルダ（例: `.claude/commands/`, `.cursor/commands/`）に配置される再利用可能なプロンプトテンプレート。
+Slash commands are reusable prompt templates that live in `~/.codex/prompts/` (global) and, when present, in repo-local folders (e.g., `.claude/commands/`, `.cursor/commands/`). This folder mirrors the global set so agents can discover and edit them in-repo.
 
-## 利用可能なコマンド
+## Available commands
+- `/acceptpr` — Land one PR end-to-end (changelog + thanks, lint, merge, back to main).
+- `/fixissue` — Fix an issue end-to-end (tests, changelog, commit, push, comment, close).
+- `/handoff` — Capture current state for the next agent (running sessions, tmux targets, blockers, next steps).
+- `/landpr` — Land PR via temp-branch rebase + full gate (`pnpm lint && pnpm build && pnpm test`) before commit; merge via `gh pr merge` (rebase/squash) and verify GitHub state = `MERGED` (never `CLOSED`).
+- `/pickup` — Rehydrate context when starting work (status, tmux sessions, CI/PR state).
+- `/raise` — If changelog is released, open next patch `Unreleased` section (commit + push `CHANGELOG.md`).
 
-- `/acceptpr` — PR を一気にランド（changelog + thanks、lint、merge、main に戻る）
-- `/handoff` — 次のエージェント用に現在の状態をキャプチャ（実行中セッション、tmux ターゲット、ブロッカー、次のステップ）
-- `/landpr` — temp-branch rebase + フルゲート（`pnpm lint && pnpm build && pnpm test`）経由で PR をランド。`gh pr merge`（rebase/squash）でマージし、GitHub 状態が `MERGED`（`CLOSED` ではない）ことを確認
-- `/pickup` — 作業開始時にコンテキストを再構築（status、tmux セッション、CI/PR 状態）
-- `/raise` — changelog がリリース済みなら、次のパッチ `Unreleased` セクションを開く（`CHANGELOG.md` をコミット + プッシュ）
-
-詳細は各ファイルを参照。
+See the individual files in this directory for details.

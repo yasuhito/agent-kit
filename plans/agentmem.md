@@ -127,6 +127,12 @@ transcript_path: /path/to/transcript.jsonl
 - Observability ダッシュボード連携（イベント送信）: JSONL へ書き出しは実装、外部ダッシュボード送信は保留
 - 通知（push/ローカル通知）: ローカル通知は実装、push/外部通知は保留
 
+## 決定: Claude SubagentStop 互換
+
+- Claude の hook からは `transcript_path` / `session_id` が渡る前提で対応する。
+- Claude の transcript JSONL から `tool_use` → `tool_result` を対応づける。
+- Claude の場合は `source=claude-hook` として記録し、event の `source_app` は `claude` を優先する。
+
 ## 実装メモ（進行中）
 
 - 観測 UI（Rails）: `apps/web` で JSONL を読み込み表示する最小ビューを用意

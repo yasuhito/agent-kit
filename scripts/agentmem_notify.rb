@@ -87,6 +87,155 @@ def truncate_text(text, max_length)
   value.length > max_length ? value[0, max_length] : value
 end
 
+# False positive words that often follow numbers
+RATING_FALSE_POSITIVES = %w[
+  items? things? steps? files? lines? points? minutes? hours? days?
+  seconds? bytes? kb mb gb pages? rows? columns? commits? changes?
+  errors? warnings? tests? failures? passes?
+].freeze
+
+def parse_rating(text)
+  return nil if text.nil? || text.strip.empty?
+
+  trimmed = text.strip
+  # "7", "8 - good", "6: needs work", "9 excellent"
+  match = trimmed.match(/^(10|[1-9])(?:\s*[-:]\s*|\s+)?(.*)$/i)
+  return nil unless match
+
+  rating = match[1].to_i
+  comment = match[2]&.strip
+  comment = nil if comment&.empty?
+
+  # False positive prevention: "7 items", "3rd step", etc.
+  if comment
+    pattern = Regexp.new("^(#{RATING_FALSE_POSITIVES.join('|')})", Regexp::IGNORECASE)
+    return nil if comment.match?(pattern)
+    return nil if comment.match?(/^\d/)
+  end
+
+  { rating: rating, comment: comment }
+end
+
+# Keywords indicating tool/system-related issues -> IMPLEMENTATION category
+IMPLEMENTATION_KEYWORDS = %w[
+  tool tools command commands bash shell terminal
+  file files read write edit delete
+  git commit push pull branch
+  error exception crash bug broken
+  permission denied access
+].freeze
+
+def rating_category_for(context, comment)
+  text = "#{context} #{comment}".downcase
+
+  IMPLEMENTATION_KEYWORDS.each do |keyword|
+    return 'IMPLEMENTATION' if text.include?(keyword)
+  end
+
+  'DECISION'
+end
+
+def normalized_agentmem_root(root)
+  root = ENV.fetch('AGENTMEM_ROOT', '~/.agent-kit/MEMORY') if root.nil? || root.to_s.empty?
+  File.expand_path(root)
+end
+
+def low_rating_completion(rating, comment)
+  completion = "Low rating feedback: #{rating}/10"
+  completion += " - #{comment}" if comment && !comment.empty?
+  completion
+end
+
+def low_rating_capture_path(root, category, timestamp, completion)
+  month_dir = timestamp.strftime('%Y-%m')
+  dir = File.join(root, category, month_dir)
+  FileUtils.mkdir_p(dir)
+
+  stamp = timestamp.strftime('%Y-%m-%d-%H%M%S')
+  description = slugify(completion)
+  filename = "#{stamp}_AGENT-user_#{category}_#{description}.md"
+  ensure_unique_path(File.join(dir, filename))
+end
+
+def build_low_rating_capture(payload)
+  rating = payload[:rating].to_i
+  comment = payload[:comment]
+  context = payload[:context]
+
+  timestamp = Time.now
+  completion = low_rating_completion(rating, comment)
+  root = normalized_agentmem_root(payload[:root])
+  category = rating_category_for(context, comment)
+  path = low_rating_capture_path(root, category, timestamp, completion)
+
+  {
+    rating: rating,
+    comment: comment,
+    context: context,
+    session_id: payload[:session_id],
+    agent_source: payload[:agent_source],
+    root: root,
+    category: category,
+    timestamp: timestamp,
+    timestamp_label: timestamp.strftime('%Y-%m-%d %H:%M:%S %Z'),
+    completion: completion,
+    path: path
+  }
+end
+
+def low_rating_frontmatter(capture)
+  build_frontmatter(
+    'capture_type' => capture[:category],
+    'timestamp' => capture[:timestamp_label],
+    'executor' => capture[:agent_source] || 'user',
+    'agent_type' => 'user',
+    'agent_source' => capture[:agent_source],
+    'agent_completion' => capture[:completion],
+    'event_type' => 'ExplicitRating',
+    'thread_id' => capture[:session_id],
+    'rating' => capture[:rating],
+    'rating_comment' => capture[:comment]
+  )
+end
+
+def low_rating_content(capture, frontmatter)
+  [
+    frontmatter,
+    '',
+    "# #{capture[:category]}: #{capture[:completion]}",
+    '',
+    '**Agent:** user',
+    "**Completed:** #{capture[:timestamp_label]}",
+    '',
+    '---',
+    '',
+    '## Agent Output',
+    '',
+    "User provided explicit rating: **#{capture[:rating]}/10**",
+    capture[:comment] ? "\n**Comment:** #{capture[:comment]}" : '',
+    '',
+    '---',
+    '',
+    '## Context',
+    '',
+    capture[:context].to_s.empty? ? '(no context available)' : capture[:context].to_s[0, 2000]
+  ].join("\n")
+end
+
+def write_low_rating_capture(capture)
+  frontmatter = low_rating_frontmatter(capture)
+  content = low_rating_content(capture, frontmatter)
+  File.write(capture[:path], content)
+end
+
+def capture_low_rating_learning(payload)
+  rating = payload[:rating].to_i
+  return if rating >= 6
+
+  capture = build_low_rating_capture(payload.merge(rating: rating))
+  write_low_rating_capture(capture)
+end
+
 def extract_last_user_message(messages)
   return nil unless messages.is_a?(Array)
 
@@ -332,6 +481,113 @@ def extract_task_output(path)
   last_result
 end
 
+def parse_jsonl(path)
+  return [] unless path && File.exist?(path)
+
+  entries = []
+  File.foreach(path) do |line|
+    next if line.strip.empty?
+
+    entries << JSON.parse(line)
+  rescue JSON::ParserError
+    next
+  end
+  entries
+end
+
+def extract_last_assistant_message_from_claude(path)
+  entries = parse_jsonl(path)
+  last = nil
+
+  entries.each do |entry|
+    next unless entry.is_a?(Hash)
+    next unless entry['type'] == 'assistant'
+
+    content = extract_text_from_content(entry.dig('message', 'content'))
+    next if content.strip.empty?
+
+    last = { 'text' => content, 'timestamp' => entry['timestamp'] }
+  end
+
+  last
+end
+
+def claude_task_use_from_entry(entry)
+  return nil unless entry.is_a?(Hash)
+  return nil unless entry['type'] == 'assistant'
+
+  contents = entry.dig('message', 'content')
+  return nil unless contents.is_a?(Array)
+
+  contents.each do |content|
+    next unless content.is_a?(Hash)
+    next unless content['type'] == 'tool_use'
+    next unless content['name'].to_s.casecmp('task').zero?
+
+    tool_id = content['id'].to_s
+    next if tool_id.empty?
+
+    tool_input = content['input'].is_a?(Hash) ? content['input'] : {}
+    return { tool_id: tool_id, tool_input: tool_input }
+  end
+
+  nil
+end
+
+def find_claude_task_use(entries)
+  (entries.length - 1).downto(0) do |index|
+    found = claude_task_use_from_entry(entries[index])
+    return found.merge(index: index) if found
+  end
+
+  nil
+end
+
+def find_claude_task_result(entries, start_index, tool_id)
+  (start_index + 1).upto(entries.length - 1) do |index|
+    entry = entries[index]
+    next unless entry.is_a?(Hash)
+    next unless entry['type'] == 'user'
+
+    results = entry.dig('message', 'content')
+    next unless results.is_a?(Array)
+
+    results.each do |result|
+      next unless result.is_a?(Hash)
+      next unless result['type'] == 'tool_result'
+      next unless result['tool_use_id'].to_s == tool_id
+
+      return result
+    end
+  end
+
+  nil
+end
+
+def extract_task_output_from_claude_transcript(path)
+  entries = parse_jsonl(path)
+  return nil if entries.empty?
+
+  use = find_claude_task_use(entries)
+  return nil unless use
+
+  result = find_claude_task_result(entries, use[:index], use[:tool_id])
+  return nil unless result
+
+  output_text = extract_text_from_output(result['content']).to_s
+  return nil if output_text.strip.empty?
+
+  tool_input = use[:tool_input]
+  {
+    output: output_text,
+    agent_type: tool_input['subagent_type'] || tool_input['agent_type'] || tool_input['agent'],
+    description: tool_input['description'],
+    call_id: use[:tool_id],
+    run_in_background: tool_input['run_in_background'],
+    args: tool_input
+  }
+end
+
 AGENT_TYPE_PATTERNS = [
   /\[AGENT:([^\]]+)\]/,
   /🗣️\s*\*{0,2}([A-Za-z0-9_-]+):?\*{0,2}\s*/i,
@@ -525,6 +781,10 @@ def run_agentmem_notify
   payload = parse_payload(read_payload)
   data = fetch_value(payload, 'data') || {}
   event_type = fetch_value(payload, 'type', 'event', 'name')
+  transcript_path = fetch_value(payload, 'transcript_path', 'transcript-path', 'transcriptPath')
+  transcript_path ||= fetch_value(data, 'transcript_path', 'transcript-path', 'transcriptPath')
+  session_id = fetch_value(payload, 'session_id', 'session-id', 'sessionId')
+  session_id ||= fetch_value(data, 'session_id', 'session-id', 'sessionId')
 
   last_message = fetch_value(
     data,
@@ -533,29 +793,43 @@ def run_agentmem_notify
     'lastAssistantMessage'
   )
   input_messages = fetch_value(data, 'input-messages', 'input_messages', 'inputMessages') || []
+  # Claude Code UserPromptSubmit hook sends prompt directly
+  prompt_text = fetch_value(payload, 'prompt')
   cwd = fetch_value(payload, 'cwd') || fetch_value(data, 'cwd')
   thread_id = fetch_value(data, 'thread-id', 'thread_id', 'threadId')
+  thread_id ||= session_id
   turn_id = fetch_value(data, 'turn-id', 'turn_id', 'turnId')
 
-  sessions_root = ENV.fetch('CODEX_SESSIONS_DIR', '~/.codex/sessions')
-  sessions_root = File.expand_path(sessions_root)
   session_message = nil
-  session_path = with_short_retry { find_session_by_id(sessions_root, thread_id) }
-  session_meta = read_session_meta(session_path)
-  session_message = with_short_retry { extract_last_assistant_message(session_path) } if session_path
+  session_meta = nil
+  session_path = transcript_path ? File.expand_path(transcript_path) : nil
 
-  if session_message.nil?
-    recent = select_recent_session_message(sessions_root, cwd)
-    session_path = recent[:path] if recent
-    session_message = recent[:message] if recent
+  if session_path
+    session_message = with_short_retry { extract_last_assistant_message_from_claude(session_path) }
+  else
+    sessions_root = ENV.fetch('CODEX_SESSIONS_DIR', '~/.codex/sessions')
+    sessions_root = File.expand_path(sessions_root)
+    session_path = with_short_retry { find_session_by_id(sessions_root, thread_id) }
     session_meta = read_session_meta(session_path)
+    session_message = with_short_retry { extract_last_assistant_message(session_path) } if session_path
+
+    if session_message.nil?
+      recent = select_recent_session_message(sessions_root, cwd)
+      session_path = recent[:path] if recent
+      session_message = recent[:message] if recent
+      session_meta = read_session_meta(session_path)
+    end
+
+    session_path ||= with_short_retry { find_recent_session_by_cwd(sessions_root, cwd) }
+    session_message ||= with_short_retry { extract_last_assistant_message(session_path) } if session_path
+    session_meta ||= read_session_meta(session_path)
   end
 
-  session_path ||= with_short_retry { find_recent_session_by_cwd(sessions_root, cwd) }
-  session_message ||= with_short_retry { extract_last_assistant_message(session_path) } if session_path
-  session_meta ||= read_session_meta(session_path)
-
-  task_result = with_short_retry { extract_task_output(session_path) }
+  task_result = if session_path && transcript_path
+                  with_short_retry { extract_task_output_from_claude_transcript(session_path) }
+                else
+                  with_short_retry { extract_task_output(session_path) }
+                end
   task_description = task_result ? task_result[:description] : nil
   task_agent_type = task_result ? task_result[:agent_type] : nil
   task_run_in_background = task_result ? task_result[:run_in_background] : nil
@@ -579,6 +853,7 @@ def run_agentmem_notify
   agent_type ||= extract_agent_type_from_messages(input_messages)
   agent_type = normalize_agent_type(agent_type)
   agent_source = agent_source_from_meta(session_meta)
+  agent_source ||= 'claude' if transcript_path
   agent_label = (agent_type || agent_source || 'assistant').downcase
   category = category_for(agent_type)
   completion = completion_info[:message] || completion_line(output_body)
@@ -588,6 +863,7 @@ def run_agentmem_notify
   timestamp = Time.now
   timestamp_label = timestamp.strftime('%Y-%m-%d %H:%M:%S %Z')
 
+  source_label = transcript_path ? 'claude-hook' : 'codex-notify'
   frontmatter = build_frontmatter(
     'capture_type' => category,
     'timestamp' => timestamp_label,
@@ -604,7 +880,7 @@ def run_agentmem_notify
     'turn_id' => turn_id,
     'cwd' => cwd,
     'transcript_path' => session_path,
-    'source' => 'codex-notify'
+    'source' => source_label
   )
 
   title = completion.empty? ? "#{category}: AgentMem Capture" : "#{category}: #{completion}"
@@ -661,6 +937,40 @@ def run_agentmem_notify
         prompt: truncate_text(user_message, 500)
       }
     }
+  end
+
+  # Rating detection: check prompt_text (Claude Code) or user_message (Codex)
+  rating_source = prompt_text || user_message
+  rating_result = parse_rating(rating_source) if rating_source
+  if rating_result
+    rating_value = rating_result[:rating]
+    rating_comment = rating_result[:comment]
+    # Emit rating as observability event (UOCS compatible)
+    rating_summary = "Rating: #{rating_value}/10"
+    rating_summary += " - #{rating_comment}" if rating_comment
+    events_to_emit << {
+      source_app: agent_source || 'codex',
+      session_id: thread_id || 'unknown',
+      hook_event_type: 'ExplicitRating',
+      summary: rating_summary,
+      agent_name: 'user',
+      timestamp: timestamp_ms,
+      payload: {
+        rating: rating_value,
+        comment: rating_comment,
+        source: 'explicit'
+      }
+    }
+
+    # Low rating: also save as UOCS capture file
+    capture_low_rating_learning({
+                                  rating: rating_value,
+                                  comment: rating_comment,
+                                  context: session_message&.dig('text') || output_body,
+                                  session_id: thread_id,
+                                  agent_source: agent_source,
+                                  root: root
+                                })
   end
 
   if task_result

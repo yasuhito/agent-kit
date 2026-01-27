@@ -5,6 +5,7 @@ source 'https://rubygems.org'
 gem 'rake', '~> 13.2'
 gem 'openssl', '~> 3.3.2'
 gem 'rails', '~> 7.1'
+gem 'kramdown'
 
 group :development do
   gem 'cucumber', '~> 9.1'
