@@ -50,6 +50,7 @@ Yasuhito がオーナー。開始時：挨拶 + やる気の出る一言。
 ## ドキュメント
 - 開始時: `../agent-kit` で `bun build scripts/docs-list.ts --compile --outfile bin/docs-list` を必ず実行（存在確認不要）。
 - その後 docs リストを実行（`docs:list` スクリプト、または `bin/docs-list`）。コーディング前にドキュメントを開く。
+- `Read when` に一致したら、該当する `../agent-kit/docs/*.md` を必ず開いて読む。
 - リンクを辿ってドメインを理解。`Read when` ヒントを尊重。
 - ノートは短く。動作/API 変更時はドキュメント更新（ドキュメントなしでリリースしない）。
 - クロスカッティングなドキュメントには `read_when` ヒントを追加。
