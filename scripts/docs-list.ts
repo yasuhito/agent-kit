@@ -1,14 +1,64 @@
 #!/usr/bin/env tsx
 
-import { readdirSync, readFileSync } from 'node:fs';
-import { dirname, join, relative } from 'node:path';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const docsListFile = fileURLToPath(import.meta.url);
-const docsListDir = dirname(docsListFile);
-const DOCS_DIR = join(docsListDir, '..', 'docs');
-
 const EXCLUDED_DIRS = new Set(['archive', 'research']);
+
+function isDirectory(path: string): boolean {
+  try {
+    return statSync(path).isDirectory();
+  } catch {
+    return false;
+  }
+}
+
+function resolveDocsDirFrom(startPath: string | undefined): string | null {
+  if (!startPath) {
+    return null;
+  }
+
+  let current = resolve(startPath);
+  try {
+    if (statSync(current).isFile()) {
+      current = dirname(current);
+    }
+  } catch {
+    return null;
+  }
+
+  while (true) {
+    const docsDir = join(current, 'docs');
+    if (isDirectory(docsDir)) {
+      return docsDir;
+    }
+    const parent = dirname(current);
+    if (parent === current) {
+      return null;
+    }
+    current = parent;
+  }
+}
+
+function resolveDocsDir(): string | null {
+  const candidates = [process.argv[0], process.argv[1], process.execPath, process.cwd()];
+
+  try {
+    candidates.push(fileURLToPath(import.meta.url));
+  } catch {
+    // ignore bunfs/meta failures
+  }
+
+  for (const candidate of candidates) {
+    const resolved = resolveDocsDirFrom(candidate);
+    if (resolved) {
+      return resolved;
+    }
+  }
+
+  return null;
+}
 
 function compactStrings(values: unknown[]): string[] {
   const result: string[] = [];
@@ -122,12 +172,19 @@ function extractMetadata(fullPath: string): {
   return { summary: normalized, readWhen };
 }
 
+const docsDir = resolveDocsDir();
+
+if (!docsDir) {
+  console.error('docs-list: docs directory not found. Run from repo root.');
+  process.exit(1);
+}
+
 console.log('Listing all markdown files in docs folder:');
 
-const markdownFiles = walkMarkdownFiles(DOCS_DIR);
+const markdownFiles = walkMarkdownFiles(docsDir);
 
 for (const relativePath of markdownFiles) {
-  const fullPath = join(DOCS_DIR, relativePath);
+  const fullPath = join(docsDir, relativePath);
   const { summary, readWhen, error } = extractMetadata(fullPath);
   if (summary) {
     console.log(`${relativePath} - ${summary}`);
