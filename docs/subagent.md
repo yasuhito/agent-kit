@@ -15,15 +15,16 @@ read_when:
   tmux attach -t claude-haiku
   ```
 
-  セッション内で `/model` を実行してアクティブなモデルを確認。必要に応じて切り替え。
+  セッション内で `/model` を実行してアクティブなモデルを確認（`haiku` は Claude 3.5 Haiku のエイリアス）。必要に応じて切り替え。
 
-- アタッチせずに指示を送る場合: `bun scripts/agent-send.ts --session <name> -- "コマンド"` で実行中のエージェントセッションにテキストを送信。
+- アタッチせずに指示を送る場合: `bun scripts/agent-send.ts --session <name> -- "コマンド"` で実行中のエージェントセッションにテキストを送信する（デフォルトでは Enter を 1 回送る）。
 
 - ターンアラウンドを速くするため、最初に高速な Haiku モデルに切り替える（`claude --model haiku --dangerously-skip-permissions …` または セッション内で `/model haiku`）。
 
 - 2つのモード:
   - **ワンショットタスク**（単一の要約、短い回答）: tmux セッションで `claude --model haiku --dangerously-skip-permissions --print …` を実行、`sleep 30` で待機、出力バッファを読む。
   - **インタラクティブタスク**（複数ファイル編集、反復的なプロンプト）: tmux で `claude --model haiku --dangerously-skip-permissions` を起動、`tmux send-keys` でプロンプト送信、`tmux capture-pane` で完了した応答をキャプチャ。Haiku が終了するまで各ターン間で sleep が必要。
+- Ralph の supervisor loop も同様に `claude --dangerously-skip-permissions "<prompt>"` を呼び出して tmux ベースの自動化を回す。
 
 ## ワンショットプロンプト
 

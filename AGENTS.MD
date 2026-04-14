@@ -1,104 +1,91 @@
 # AGENTS.MD
 
-Yasuhito がオーナー。開始時：挨拶 + やる気の出る一言。
-作業スタイル：簡潔に。名詞句 OK。文法省略可。トークン最小化。
+Yasuhito がオーナー。開始時は挨拶し、ひとこと前向きな言葉を添える。
+作業スタイル：電報っぽく短く簡潔に。体言止め可。文法は崩してよい。トークン最小化。
 
-## クリティカルシンキング
-- 常に正統的な修正を選ぶ。場当たりの hack は禁止。正統解が不明/困難なら必ず止めて相談。
-- 根本原因を修正（場当たり対応ではなく）。
-- 不明: もっとコードを読む。まだわからなければ、短い選択肢で質問。
-- 衝突: 指摘して、より安全なパスを選択。
-- 認識外の変更: 他のエージェントと想定。続行。自分の変更に集中。問題があれば止まってユーザーに確認。
-- スレッドにパンくずメモを残す。
-
-## エージェントプロトコル
+## エージェントの作業ルール
 - 連絡先: Yasuhito Takamiya (@yasuhito, yasuhito@hey.com)
-- ワークスペース: `~/Work`。不足リポジトリ: `https://github.com/yasuhito/<repo>.git` から clone。
-- サードパーティ/OSS（非 yasuhito）: `~/Work/oss` 以下に clone。
-- `~/Work/manager`: プライベート運用（ドメイン/DNS、リダイレクト/workers、ランブック）。
-- "macbook-pro" => そこに SSH。ホスト/IP は `tailscale status` で確認。
-- ファイル: リポジトリ内 または `~/Work/agent-kit`。
-- PR: `gh pr view/diff` を使用（URL 不要）。
-- 「メモして」=> AGENTS.md を編集（ショートカット、ブロッカーではない）。`CLAUDE.md` は無視。
-- `./runner` 不使用。ガードレール: 削除は `gio trash` を使用。
-- 上流ファイルが必要: `/tmp/` にステージング後、cherry-pick。追跡済みファイルを上書きしない。
-- バグ: 適切なら回帰テスト追加。
-- ファイルは ~500 LOC 未満に。必要に応じて分割/リファクタ。
-- コミット: Conventional Commits (`feat|fix|refactor|build|ci|chore|docs|style|perf|test`)。
-- サブエージェント: `docs/subagent.md` を読む。
-- エディタ: `code <path>`。
-- CI: `gh run list/view`（green になるまで rerun/fix）。
-- 可能なら end-to-end 検証。ブロックされたら不足を報告。
-- 新しい依存: 軽くヘルスチェック（最近のリリース/コミット、採用状況）。
-- スラッシュコマンド: `~/.codex/prompts/`。
-- Web: 早めに検索。正確なエラーを引用。2024–2025 のソース優先。フォールバック Firecrawl (`pnpm mcp:*`) / `mcporter`。
-- Oracle: 初回使用前に `npx -y @steipete/oracle --help` を1回実行。
-- スタイル: 簡潔に。フィラー/文法省略。トークン最小化（グローバル AGENTS + 返信）。
+- 作業場所は `~/Work`。不足している yasuhito 配下のリポジトリは `https://github.com/yasuhito/<repo>.git` から clone する。
+- yasuhito 配下ではないサードパーティや OSS のリポジトリは `~/Work/oss` 以下に clone する。
+- `~/Work/manager` はプライベート運用のためのリポジトリ（ドメイン/DNS、転送設定、Cloudflare Workers、運用手順書）。
+- 「mac」と言われたら、そのマシンに SSH する。ホスト名や IP は `tailscale status` で確認する。
+- ファイルは、現在のリポジトリ内または `~/Work/agent-kit` にあるものを使う。
+- PR の確認には `gh pr view` や `gh pr diff` を使う。URL を直接たどらなくてよい。
+- 「メモして」と言われたら、作業中のリポジトリの `AGENTS.md` を更新する。`CLAUDE.md` は無視してよい。
+- 削除が必要なときは、`~/Work` 配下のファイルでは `gio trash` を使う。
+- upstream や別のリポジトリからファイルを取り込む必要があるときは、いったん `/tmp/` に置いてから cherry-pick する。追跡済みファイルを直接上書きしない。
+- バグ修正では、適切な場合は回帰テストを追加する。
+- ファイルはおおむね 500 行未満に保つ。必要に応じて分割やリファクタを行う。
+- コミットメッセージは Conventional Commits（`feat|fix|refactor|build|ci|chore|docs|style|perf|test`）に従う。
+- サブエージェントを使うときは `docs/subagent.md` を読む。
+- エディタを開く必要があるときは `emacsclient -n <path>` を使う。必要に応じて `emacs <path>` でもよい。
+- CI の確認には `gh run list` や `gh run view` を使う。失敗していたら、green になるまで rerun と修正を繰り返す。
+- 可能なら end-to-end で検証する。ブロックされた場合は、足りない認証情報・環境・依存サービス・権限を具体的に報告する。
+- 新しい依存を追加するときは、最近のリリース頻度・コミット頻度・採用状況を軽く確認する。
+- pi の prompt template は、グローバルでは `~/.pi/agent/prompts/`、プロジェクトでは `.pi/prompts/` を使う。
+- Web 検索は早めに行い、正確なエラーメッセージを引用する。2025–2026 年のソースを優先する。必要なら pi の `web_search` / `fetch_content` / `mcp` を使う。
+- Oracle を初めて使う前に、`npm exec --yes --package @steipete/oracle -- oracle --help` を1回実行する。
+- 文体は簡潔にし、不要な前置きやフィラーを避ける。必要なら文法は少し崩してよい。返信も含めてトークンを最小化する。
 
 ## スクリーンショット（「スクショ使って」）
-- `~/Pictures` または `~/Downloads` の最新 PNG を選択。
-- 正しい UI か確認（ファイル名は無視）。
-- サイズ確認: `file <file>` または `identify <file>`（ImageMagick）。
-- アセット置換 → 寸法維持 → コミット → ゲート実行 → CI 確認。
+- 「スクショ使って」と言われたら、まず `~/Pictures` または `~/Downloads` にある最新の PNG を確認する。
+- ファイル名ではなく実際の画像内容を見て、目的の UI かどうかを確認する。
+- サイズは `file <file>` または `identify <file>`（ImageMagick）で確認し、可能なら高解像度の画像を優先する。
+- PNG を最適化するときは、`magick <file> -strip -define png:compression-level=9 <output.png>` を使う。
+- アセットを置き換えるときは、寸法を維持したうえでコミットし、必要なチェックを実行して CI も確認する。
 
 ## 重要な場所
 - ブログリポジトリ: `~/Work/yasuhito.me`
-- ノート/ランブック: `~/Work/manager/docs/`（例: `mac-studio.md`, `mac-vm.md`）
-- OpenAI/Codex 制限追跡: `~/Documents/codex limits.md`
-- Obsidian vault: `~/Work/obsidian`
+- ノートや運用手順書は `~/Work/manager/docs/` にある（例: `mac-studio.md`, `mac-vm.md`）。
+- 人間用の Obsidian vault は `~/Work/obsidian`。
+- エージェント用の vault は `~/Work/AgentVault`。
 
 ## ドキュメント
-- 開始時: `../agent-kit` で `bun build scripts/docs-list.ts --compile --outfile bin/docs-list` を必ず実行（存在確認不要）。
-- その後 docs リストを実行（`docs:list` スクリプト、または `bin/docs-list`）。コーディング前にドキュメントを開く。
-- `Read when` に一致したら、該当する `../agent-kit/docs/*.md` を必ず開いて読む。
-- リンクを辿ってドメインを理解。`Read when` ヒントを尊重。
-- ノートは短く。動作/API 変更時はドキュメント更新（ドキュメントなしでリリースしない）。
-- クロスカッティングなドキュメントには `read_when` ヒントを追加。
-- モデル優先: 最新のみ。OK: Anthropic Opus 4.5 / Sonnet 4.5（Sonnet 3.5 = 古い、避ける）、OpenAI GPT-5.2、xAI Grok-4.1 Fast、Google Gemini 3 Flash。
+- 開始時は docs 一覧を実行する（`docs:list` スクリプト、または `bin/docs-list` があればそれを使う）。コーディング前に関連ドキュメントを開く。
+- `Read when` に一致したドキュメントは必ず開いて読む。
+- リンクを辿って、必要なドメイン知識がつくまで読む。`Read when` ヒントを尊重する。
+- ノートは短く保つ。動作や API を変えたときはドキュメントも更新する。ドキュメントなしで出荷しない。
+- 複数の作業や機能にまたがって参照されるドキュメントには、`read_when` ヒントを追加する。
+- 使うモデルは GPT-5.4 のみ。ほかのモデルへ勝手に切り替えない。
 
 ## PR フィードバック
-- アクティブ PR: `gh pr view --json number,title,url --jq '"PR #\\(.number): \\(.title)\\n\\(.url)"'`
-- PR コメント: `gh pr view …` + `gh api …/comments --paginate`
-- 返信: 修正 + ファイル/行を引用。修正後のみスレッド解決。
-- PR マージ時: `CHANGELOG.md` でコントリビューターに感謝。
-- PR タイトルと説明文は日本語で書く。
+- 現在のブランチに対応する PR を確認するときは、`gh pr view --json number,title,url --jq '"PR #\\(.number): \\(.title)\\n\\(.url)"'` を使う。
+- PR のコメントを確認するときは、`gh pr view ...` と `gh api .../comments --paginate` を使う。
+- PR コメントに返信するときは、何を直したかと対象のファイル/行を示す。修正が入る前にスレッドを解決しない。
+- PR をマージするときは、`CHANGELOG.md` でコントリビューターに感謝を記す。
+- PR や issue のタイトル・説明文は、このリポジトリの既存の PR / issue の言語とスタイルに合わせる。判断材料がなければユーザーに確認する。
 
-## フロー & ランタイム
-- リポジトリのパッケージマネージャ/ランタイムを使用。承認なしで変更しない。
-- 長いジョブは Codex バックグラウンドで。tmux は対話/永続が必要な場合のみ（デバッガ/サーバー）。
+## 作業の進め方と実行環境
+- パッケージマネージャやランタイムは、そのリポジトリで使われているものを使う。承認なしに別のものへ切り替えない。
+- 長時間かかるジョブはバックグラウンド実行を使う。`tmux` は対話や永続化が必要な場合だけ使う（デバッガやサーバーなど）。
 
 ## ビルド / テスト
-- ハンドオフ前: フルゲート実行（lint/typecheck/tests/docs）。
-- CI が赤: `gh run list/view`、rerun、fix、push、green まで繰り返し。
-- 観察可能に（ログ、ペイン、tail、MCP/ブラウザツール）。
-- リリース: `docs/RELEASING.md` を読む（なければ最適なチェックリストを探す）。
-- リマインダー: `~/.profile` で不足 env キーを確認（例: `SPARKLE_PRIVATE_KEY_FILE`）。Sparkle キーは `~/Library/CloudStorage/Dropbox/Backup/Sparkle` にある。
+- ハンドオフ前には、そのリポジトリで定義されているフルチェックを実行する（lint、typecheck、tests、docs など）。
+- CI が失敗していたら、`gh run list` や `gh run view` で状況を確認し、green になるまで rerun・修正・push を繰り返す。
+- 長時間のジョブや検証は、進捗や失敗理由が追える形で実行する。ログ、ペイン、`tail`、MCP、ブラウザツールを活用する。
+- リリース作業をするときは、まず `docs/RELEASING.md` を読む。なければ最適なチェックリストを探す。
 
 ## Git
-- デフォルトは安全に: `git status/diff/log`。push はユーザーが求めた時のみ。
-- `git checkout` は PR レビュー/明示的リクエスト時 OK。
-- ブランチ変更はユーザー同意が必要。
-- 破壊的操作は明示的でない限り禁止（`reset --hard`、`clean`、`restore`、`rm` など）。
-- `~/Work` 以下のリモート: HTTPS 推奨。pull/push 前に SSH→HTTPS に変換。
-- コミットヘルパー PATH 上: `committer`（bash）。リポジトリに `./scripts/committer` があればそれを使用。
-- 予期しないものを削除/リネームしない。止まって確認。
-- リポジトリ全体の一括置換スクリプト禁止。編集は小さく/レビュー可能に。
-- 手動 `git stash` 避ける。Git が pull/rebase 時に自動スタッシュするのは OK（ヒント、ハードガードレールではない）。
-- ユーザーがコマンドを入力したら（「pull して push」）、そのコマンドへの同意。
-- 明示的でない限り amend しない。
-- 大きなレビュー: `git --no-pager diff --color=never`。
-- マルチエージェント: 編集前に `git status/diff` 確認。小さなコミットで ship。
+- 基本は安全な Git 操作を優先し、まず `git status`、`git diff`、`git log` を使う。push は原則ユーザーの明示的な指示がある場合のみとする。ただし、CI を green に戻すために必要な PR への push は例外とする。
+- `git checkout` は、PR レビューまたはユーザーの明示的な依頼がある場合に使ってよい。
+- ブランチを切り替えたり変更したりする前に、ユーザーの同意を取る。
+- 破壊的な操作は、明示的な指示がない限り行わない（`git reset --hard`、`git clean`、`git restore`、`git rm` など）。
+- `~/Work` 配下のリモートは HTTPS を優先する。pull や push の前に SSH URL を HTTPS に直せるなら直す。
+- コミットヘルパーは、リポジトリ内に `./scripts/committer` があればそれを優先し、なければ PATH 上の `committer` を使う。
+- 予期しないファイルや変更を勝手に削除・改名しない。必要なら止まってユーザーに確認する。
+- リポジトリ全体に対する一括置換スクリプトは使わない。編集は小さく、レビューしやすい単位に保つ。
+- 手動の `git stash` は避ける。pull や rebase の過程で Git が自動スタッシュするのは許容する。
+- ユーザーが具体的な Git コマンドを指示した場合（例: 「pull して push」）、そのコマンドの実行については同意があるものとみなす。
+- `git commit --amend` は、明示的に求められたときだけ使う。
+- 大きな差分を確認するときは、`git --no-pager diff --color=never` を使う。
+- 複数エージェントで作業するときは、編集前に `git status` と `git diff` を確認し、コミットは小さく分ける。
 
 ## 言語/スタック メモ
-- Swift: ワークスペースヘルパー/デーモン使用。`swift build` + テストを検証。concurrency 属性を正しく保つ。
-- TypeScript: リポジトリの PM 使用。`docs:list` 実行。ファイルは小さく。既存パターンに従う。
+- TypeScript を扱うときは、そのリポジトリで使われているパッケージマネージャを使う。`docs:list` を実行し、ファイルは小さく保ち、既存のパターンに従う。
 
 ## ツール
 
-`~/Work/agent-kit/tools.md` が存在すればフルツールカタログを読む。
-
-### bird
-- X CLI: `bird`（npm グローバルインストール）。コマンド: `tweet`, `reply`, `read`, `thread`, `search`, `mentions`, `whoami`。
+`~/Work/agent-kit/tools.md` があれば、ツール一覧の参考として読む。
 
 ### omarchy スクリーンショット
 - スクショ（編集付き）: `omarchy-cmd-screenshot`（PRINT キー）
