@@ -1,56 +1,103 @@
 ---
-summary: 'スラッシュコマンド: /landpr プロンプトテンプレート'
+summary: 'PR を temp branch rebase + full gate で一気にランドする'
 read_when:
-  - PR を一気にランドする時（rebase temp branch、changelog、gate、merge）
+  - PR を一気にランドする時（rebase temp branch、full gate、merge）
 ---
 # /landpr
 
 入力
-- PR: `<pr-number>`
+- PR: `$1`（番号または URL）。省略時は会話中の最新 PR を使う。曖昧なら確認。
 
-実行（一気通貫）
-目標: PR が GitHub 状態 `MERGED`（`CLOSED` ではない）で終わる。`gh pr merge` を `--rebase` または `--squash` で使用。
+目標
+- GitHub 上の PR 状態を `MERGED` にする（`CLOSED` で終わらせない）。
 
-1) リポジトリクリーン: `git status`
-2) PR メタ情報取得（author + head branch）:
-   - `gh pr view <pr-number> --json number,title,author,headRefName,baseRefName --jq '{number,title,author:.author.login,head:.headRefName,base:.baseRefName}'`
-   - `contrib=$(gh pr view <pr-number> --json author --jq .author.login)`
-   - `head=$(gh pr view <pr-number> --json headRefName --jq .headRefName)`
-3) ベースを fast-forward:
-   - `git checkout main`
-   - `git pull --ff-only`
-4) `main` から temp ベースブランチ作成:
-   - `git checkout -b temp/landpr-<pr-number>`
-5) PR ブランチをローカルにチェックアウト:
-   - `gh pr checkout <pr-number>`
-6) PR ブランチを temp ベースに rebase:
-   - `git rebase temp/landpr-<pr-number>`
-   - コンフリクト解決、履歴を整理
-7) 修正 + テスト + changelog:
-   - 修正を実装 + テスト追加/調整
-   - `CHANGELOG.md` を更新、`#<pr-number>` + `@$contrib` を記載
-8) マージ戦略を選択（不明なら確認）:
-   - Rebase: コミット履歴を保持
-   - Squash: 単一のクリーンなコミット
-9) フルゲート（コミット前）:
-   - `pnpm lint && pnpm build && pnpm test`
-10) `committer` でコミット（`#<pr-number>` + contributor をメッセージに含める）:
-   - `committer "fix: <summary> (#<pr-number>) (thanks @$contrib)" CHANGELOG.md <changed files>`
-   - `land_sha=$(git rev-parse HEAD)` をキャプチャ
-11) 更新した PR ブランチを push（rebase => 通常 force が必要）:
-   - `git push --force-with-lease`
-12) PR をマージ（GitHub で MERGED 表示が必須）:
-   - Rebase: `gh pr merge <pr-number> --rebase`
-   - Squash: `gh pr merge <pr-number> --squash`
-   - `gh pr close` は絶対使わない
-13) `main` を同期 + push:
-   - `git checkout main`
-   - `git pull --ff-only`
-   - `git push`
-14) PR にコメント（実行内容 + SHA + thanks）:
-   - `merge_sha=$(gh pr view <pr-number> --json mergeCommit --jq '.mergeCommit.oid')`
-   - `gh pr comment <pr-number> --body "Landed via temp rebase onto main.\n\n- Gate: pnpm lint && pnpm build && pnpm test\n- Land commit: $land_sha\n- Merge commit: $merge_sha\n\nThanks @$contrib!"`
-15) PR 状態 == `MERGED` を確認:
-   - `gh pr view <pr-number> --json state,mergedAt --jq '.state + \" @ \" + .mergedAt'`
-16) temp ブランチを削除:
-   - `git branch -D temp/landpr-<pr-number>`
+0) ガードレール
+- `git status -sb` がクリーンであること。
+- PR が draft、コンフリクトあり、または head branch へ push できない場合は停止して確認。
+- base はリポジトリのデフォルトブランチを優先する（多くは `main`）。
+
+1) PR コンテキストを取得
+
+```sh
+PR="$1"
+gh pr view "$PR" --json number,title,state,isDraft,mergeable,author,baseRefName,headRefName,headRepository,maintainerCanModify --jq '{number,title,state,isDraft,mergeable,author:.author.login,base:.baseRefName,head:.headRefName,headRepo:.headRepository.nameWithOwner,maintainerCanModify}'
+prnum=$(gh pr view "$PR" --json number --jq .number)
+contrib=$(gh pr view "$PR" --json author --jq .author.login)
+base=$(gh pr view "$PR" --json baseRefName --jq .baseRefName)
+head=$(gh pr view "$PR" --json headRefName --jq .headRefName)
+head_repo_url=$(gh pr view "$PR" --json headRepository --jq .headRepository.url)
+```
+
+2) base を更新して temp ブランチ作成
+
+```sh
+git checkout "$base"
+git pull --ff-only
+git checkout -b "temp/landpr-$prnum"
+```
+
+3) PR を checkout して temp に rebase
+
+```sh
+gh pr checkout "$PR"
+git rebase "temp/landpr-$prnum"
+```
+
+4) 修正 + テスト + changelog
+- 修正を実装する（スコープは絞る）。
+- 必要ならテストを追加/調整する（回帰テスト優先）。
+- `CHANGELOG.md` を更新し、`#$prnum` と `@$contrib` を含める。
+
+5) Gate（コミット前）
+- リポジトリの full gate を実行する（lint/typecheck/tests/docs）。例: `pnpm lint && pnpm build && pnpm test`。
+
+6) `committer` でコミット
+
+```sh
+committer "fix: <summary> (#$prnum) (thanks @$contrib)" CHANGELOG.md <changed files>
+land_sha=$(git rev-parse HEAD)
+```
+
+7) rebase 済み PR ブランチを push（fork-safe）
+
+```sh
+git remote add prhead "$head_repo_url.git" 2>/dev/null || git remote set-url prhead "$head_repo_url.git"
+git push --force-with-lease prhead "HEAD:$head"
+```
+
+8) PR をマージ
+- Rebase: `gh pr merge "$PR" --rebase`
+- Squash: `gh pr merge "$PR" --squash`
+- `gh pr close` は使わない。
+
+9) base をローカルで同期
+
+```sh
+git checkout "$base"
+git pull --ff-only
+```
+
+10) SHA + thanks を PR コメントに残す
+
+```sh
+merge_sha=$(gh pr view "$PR" --json mergeCommit --jq '.mergeCommit.oid')
+gh pr comment "$PR" --body "Landed via temp rebase onto $base.
+
+- Gate: <cmds>
+- Land commit: $land_sha
+- Merge commit: $merge_sha
+
+Thanks @$contrib!"
+```
+
+11) 状態が `MERGED` であることを確認
+
+```sh
+gh pr view "$PR" --json state,mergedAt --jq '.state + " @ " + .mergedAt'
+```
+
+12) Cleanup
+
+```sh
+git branch -D "temp/landpr-$prnum"
+```
