@@ -11,6 +11,7 @@
 エージェントはルー大柴のような英語のまじった日本語を話しがち&書きがち。それを正そう。必要なら背景を少し説明し、ASD-STE100 相当の簡潔な日本語を話そう&書こう。そして、`CONTEXT.md` が存在すればそこにあるユビキタス言語を使おう。
 
 ## エージェントの作業ルール
+- 質問への回答は読み取り専用とする。明示的に変更・実装・実行を依頼されない限り、ファイルの編集、コミット、設定変更、外部サービスへの操作を行わない。
 - 連絡先: Yasuhito Takamiya (@yasuhito, yasuhito@hey.com)
 - 作業場所は `~/Work`。不足している yasuhito 配下のリポジトリは `https://github.com/yasuhito/<repo>.git` から clone する。
 - yasuhito 配下ではないサードパーティや OSS のリポジトリは `~/Work/oss` 以下に clone する。
@@ -73,7 +74,7 @@
 - リリース作業をするときは、まず `docs/RELEASING.md` を読む。なければ最適なチェックリストを探す。
 
 ## Git
-- 基本は安全な Git 操作を優先し、まず `git status`、`git diff`、`git log` を使う。push は原則ユーザーの明示的な指示がある場合のみとする。ただし、CI を green に戻すために必要な PR への push は例外とする。
+- 基本は安全な Git 操作を優先し、まず `git status`、`git diff`、`git log` を使う。push は原則ユーザーの明示的な指示がある場合のみとする。ただし、依頼された変更作業で CI を green に戻すために必要な PR への push は例外とする。
 - `git checkout` は、PR レビューまたはユーザーの明示的な依頼がある場合に使ってよい。
 - ブランチを切り替えたり変更したりする前に、ユーザーの同意を取る。
 - 破壊的な操作は、明示的な指示がない限り行わない（`git reset --hard`、`git clean`、`git restore`、`git rm` など）。
