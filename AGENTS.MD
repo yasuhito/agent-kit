@@ -48,7 +48,7 @@
 - エージェント用の vault は `~/Work/AgentVault`。
 
 ## ドキュメント
-- 開始時は docs 一覧を実行する（`docs:list` スクリプト、または `bin/docs-list` があればそれを使う）。コーディング前に関連ドキュメントを開く。
+- 開始時は docs 一覧を実行する（`docs:list` スクリプトがあればそれを、なければ PATH 上の `docs-list` コマンドを使う）。コーディング前に関連ドキュメントを開く。
 - `Read when` に一致したドキュメントは必ず開いて読む。
 - リンクを辿って、必要なドメイン知識がつくまで読む。`Read when` ヒントを尊重する。
 - ノートは短く保つ。動作や API を変えたときはドキュメントも更新する。ドキュメントなしで出荷しない。
@@ -111,12 +111,14 @@
 ### gio trash
 - `~/Work` 配下のファイルをゴミ箱に移動するときは、`gio trash <file>` を使う。
 
-### bin/docs-list / scripts/docs-list.ts
-- `bin/docs-list` は `docs/` の Markdown 一覧と front matter の有無を確認するためのツール。無ければ無視してよい。リビルドは `bun build scripts/docs-list.ts --compile --outfile bin/docs-list`。
+### docs-list
+- `docs-list` は `~/Work/agent-kit/bin/docs-list` のコンパイル済みバイナリで、`~/Work/agent-kit/bin` を PATH に通してあるためどのリポジトリでも `docs-list` とだけ叩けばよい（`bin/docs-list` のような相対パスでは、agent-kit の外では見つからない）。
+- 実行した cwd から上に辿って見つけた `docs/` の Markdown 一覧と front matter の有無を確認するツール。PATH 上に無ければ無視してよい。
+- ソースは `~/Work/agent-kit/scripts/docs-list.ts`。リビルドするときは `cd ~/Work/agent-kit && bun build scripts/docs-list.ts --compile --outfile bin/docs-list` を実行する。
 
 ### browser-tools
-- `bin/browser-tools` がローカルにあれば、Chrome DevTools ヘルパーとして使う。主なコマンドは `start`, `nav`, `eval`, `screenshot`, `pick`, `cookies`, `inspect`, `kill`。
-- バイナリは git 管理しない。必要なら、一時的な Bun ワークスペースで `commander` と `puppeteer-core` を入れてから、`bun build scripts/browser-tools.ts --compile --target bun --outfile bin/browser-tools` で再生成する。
+- `browser-tools` は `~/Work/agent-kit/bin/browser-tools` のコンパイル済みバイナリで、`~/Work/agent-kit/bin` を PATH に通してあるためどのリポジトリでも `browser-tools <command>` とだけ叩けばよい（`bin/browser-tools` のような相対パスでは、agent-kit の外では見つからない）。Chrome DevTools ヘルパーとして使う。主なコマンドは `start`, `nav`, `eval`, `screenshot`, `pick`, `cookies`, `inspect`, `kill`。
+- バイナリは git 管理しない（PATH 上に無ければ無視してよい）。必要なら、一時的な Bun ワークスペースで `commander` と `puppeteer-core` を入れてから、`cd ~/Work/agent-kit && bun build scripts/browser-tools.ts --compile --target bun --outfile bin/browser-tools` で再生成する。
 
 ### oracle
 - 別モデルにプロンプトと関連ファイルをまとめて渡したいときに使う。詰まったとき、バグ調査、レビュー、設計のクロスチェックに向いている。
